@@ -17,29 +17,55 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
+
 const AddEditExpense: React.FC = () => {
-  const { month: editMonth } = useParams();
+  const { year: editYear, month: editMonth } = useParams();
   const navigate = useNavigate();
-  const { expenses, updateMonth } = useExpenses();
+  const { getYearData, updateMonth, selectedYear, availableYears } = useExpenses();
   const { toast } = useToast();
 
+  const [formYear, setFormYear] = useState<number>(editYear ? Number(editYear) : selectedYear);
   const [selectedMonth, setSelectedMonth] = useState<string>(editMonth || '');
   const [formData, setFormData] = useState<MonthData>(createEmptyMonth());
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Get all years for dropdown
+  const allYears = Array.from(
+    new Set([...availableYears, ...YEARS])
+  ).sort((a, b) => b - a);
+
   useEffect(() => {
-    if (editMonth && expenses[editMonth]) {
-      setFormData({ ...expenses[editMonth] });
+    if (editMonth && editYear) {
+      const yearData = getYearData(Number(editYear));
+      if (yearData[editMonth]) {
+        setFormData({ ...yearData[editMonth] });
+      }
       setSelectedMonth(editMonth);
+      setFormYear(Number(editYear));
     }
-  }, [editMonth, expenses]);
+  }, [editMonth, editYear, getYearData]);
 
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month);
-    if (expenses[month]) {
-      setFormData({ ...expenses[month] });
+    const yearData = getYearData(formYear);
+    if (yearData[month]) {
+      setFormData({ ...yearData[month] });
     } else {
       setFormData(createEmptyMonth());
+    }
+  };
+
+  const handleYearChange = (year: number) => {
+    setFormYear(year);
+    if (selectedMonth) {
+      const yearData = getYearData(year);
+      if (yearData[selectedMonth]) {
+        setFormData({ ...yearData[selectedMonth] });
+      } else {
+        setFormData(createEmptyMonth());
+      }
     }
   };
 
@@ -116,10 +142,10 @@ const AddEditExpense: React.FC = () => {
   const handleSubmit = () => {
     if (!validateForm()) return;
 
-    updateMonth(selectedMonth, formData);
+    updateMonth(formYear, selectedMonth, formData);
     toast({
       title: 'Expenses saved!',
-      description: `${selectedMonth} expenses have been updated successfully.`,
+      description: `${selectedMonth} ${formYear} expenses have been updated successfully.`,
     });
     navigate('/months');
   };
@@ -250,33 +276,52 @@ const AddEditExpense: React.FC = () => {
             {editMonth ? 'Edit Expenses' : 'Add Expenses'}
           </h1>
           <p className="text-muted-foreground">
-            {editMonth ? `Editing ${editMonth}` : 'Record your monthly expenses'}
+            {editMonth ? `Editing ${editMonth} ${editYear}` : 'Record your monthly expenses'}
           </p>
         </div>
       </div>
 
-      {/* Month Selection */}
+      {/* Year and Month Selection */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className="stat-card stat-card-primary"
       >
-        <Label className="text-sm font-medium mb-2 block">Select Month</Label>
-        <Select value={selectedMonth} onValueChange={handleMonthChange}>
-          <SelectTrigger className={cn(errors.month && 'border-destructive')}>
-            <SelectValue placeholder="Choose a month..." />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTHS.map((month) => (
-              <SelectItem key={month} value={month}>
-                {month}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {errors.month && (
-          <p className="text-sm text-destructive mt-1">{errors.month}</p>
-        )}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <Label className="text-sm font-medium mb-2 block">Select Year</Label>
+            <Select value={formYear.toString()} onValueChange={(val) => handleYearChange(Number(val))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a year..." />
+              </SelectTrigger>
+              <SelectContent>
+                {allYears.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1">
+            <Label className="text-sm font-medium mb-2 block">Select Month</Label>
+            <Select value={selectedMonth} onValueChange={handleMonthChange}>
+              <SelectTrigger className={cn(errors.month && 'border-destructive')}>
+                <SelectValue placeholder="Choose a month..." />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((month) => (
+                  <SelectItem key={month} value={month}>
+                    {month}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.month && (
+              <p className="text-sm text-destructive mt-1">{errors.month}</p>
+            )}
+          </div>
+        </div>
       </motion.div>
 
       {/* Categories Grid */}

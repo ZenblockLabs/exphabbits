@@ -33,8 +33,9 @@ const formatCurrency = (value: number) => {
 };
 
 export const CategoryPieChart: React.FC = () => {
-  const { expenses } = useExpenses();
-  const breakdown = getCategoryBreakdown(expenses);
+  const { getYearData } = useExpenses();
+  const yearData = getYearData();
+  const breakdown = getCategoryBreakdown(yearData);
 
   const data = Object.entries(CATEGORIES).map(([key, config], index) => ({
     name: config.label,
@@ -100,8 +101,9 @@ export const CategoryPieChart: React.FC = () => {
 };
 
 export const MonthlyBarChart: React.FC = () => {
-  const { expenses } = useExpenses();
-  const monthlyData = getMonthlyTotals(expenses).map(item => ({
+  const { getYearData } = useExpenses();
+  const yearData = getYearData();
+  const monthlyData = getMonthlyTotals(yearData).map(item => ({
     ...item,
     month: item.month.slice(0, 3),
   }));

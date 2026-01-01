@@ -24,7 +24,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/months" element={<MonthlyView />} />
               <Route path="/add" element={<AddEditExpense />} />
-              <Route path="/edit/:month" element={<AddEditExpense />} />
+              <Route path="/edit/:year/:month" element={<AddEditExpense />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

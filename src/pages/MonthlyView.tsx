@@ -23,28 +23,29 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-// Generate years for selection (current year and a few past/future years)
+// Generate years for selection
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
 const MonthlyView: React.FC = () => {
-  const { expenses, searchTerm } = useExpenses();
+  const { getYearData, selectedYear, setSelectedYear, searchTerm, availableYears } = useExpenses();
   const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+
+  const yearData = getYearData();
 
   // Filter months based on search
   const filteredMonths = MONTHS.filter((month) =>
     month.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const monthData = selectedMonth ? expenses[selectedMonth] : null;
+  const monthData = selectedMonth ? yearData[selectedMonth] : null;
   const monthTotal = monthData ? calculateMonthTotal(monthData) : 0;
 
-  // Get months with data for highlighting
-  const monthsWithData = MONTHS.filter((month) => 
-    expenses[month] && calculateMonthTotal(expenses[month]) > 0
-  );
+  // Get all years for dropdown
+  const allYears = Array.from(
+    new Set([...availableYears, ...YEARS])
+  ).sort((a, b) => b - a);
 
   if (selectedMonth && monthData) {
     return (
@@ -59,7 +60,7 @@ const MonthlyView: React.FC = () => {
             <span>Back to months</span>
           </button>
           <Button
-            onClick={() => navigate(`/edit/${selectedMonth}`)}
+            onClick={() => navigate(`/edit/${selectedYear}/${selectedMonth}`)}
             variant="outline"
             size="sm"
             className="gap-2"
@@ -78,7 +79,7 @@ const MonthlyView: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Viewing</p>
-              <h2 className="font-display text-2xl font-bold">{selectedMonth}</h2>
+              <h2 className="font-display text-2xl font-bold">{selectedMonth} {selectedYear}</h2>
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Total Spent</p>
@@ -109,7 +110,7 @@ const MonthlyView: React.FC = () => {
               <SelectValue placeholder="Year" />
             </SelectTrigger>
             <SelectContent>
-              {YEARS.map((year) => (
+              {allYears.map((year) => (
                 <SelectItem key={year} value={year.toString()}>
                   {year}
                 </SelectItem>
@@ -134,7 +135,7 @@ const MonthlyView: React.FC = () => {
       {/* Month Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredMonths.map((month, index) => {
-          const total = expenses[month] ? calculateMonthTotal(expenses[month]) : 0;
+          const total = yearData[month] ? calculateMonthTotal(yearData[month]) : 0;
           const hasData = total > 0;
 
           return (
