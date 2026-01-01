@@ -1,0 +1,311 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Plus, Trash2, Save, ArrowLeft, X } from 'lucide-react';
+import { useExpenses } from '@/contexts/ExpenseContext';
+import { MONTHS, CATEGORIES, MonthData, ExpenseItem, createEmptyMonth } from '@/data/expenseData';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+const AddEditExpense: React.FC = () => {
+  const { month: editMonth } = useParams();
+  const navigate = useNavigate();
+  const { expenses, updateMonth } = useExpenses();
+  const { toast } = useToast();
+
+  const [selectedMonth, setSelectedMonth] = useState<string>(editMonth || '');
+  const [formData, setFormData] = useState<MonthData>(createEmptyMonth());
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (editMonth && expenses[editMonth]) {
+      setFormData({ ...expenses[editMonth] });
+      setSelectedMonth(editMonth);
+    }
+  }, [editMonth, expenses]);
+
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+    if (expenses[month]) {
+      setFormData({ ...expenses[month] });
+    } else {
+      setFormData(createEmptyMonth());
+    }
+  };
+
+  // Handle simple array inputs (snacks, food, travelling, petrol)
+  const handleSimpleArrayAdd = (category: 'snacks' | 'food' | 'travellingCharge' | 'petrol') => {
+    setFormData(prev => ({
+      ...prev,
+      [category]: [...prev[category], 0],
+    }));
+  };
+
+  const handleSimpleArrayChange = (
+    category: 'snacks' | 'food' | 'travellingCharge' | 'petrol',
+    index: number,
+    value: string
+  ) => {
+    const numValue = parseFloat(value) || 0;
+    setFormData(prev => ({
+      ...prev,
+      [category]: prev[category].map((v, i) => (i === index ? numValue : v)),
+    }));
+  };
+
+  const handleSimpleArrayRemove = (
+    category: 'snacks' | 'food' | 'travellingCharge' | 'petrol',
+    index: number
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [category]: prev[category].filter((_, i) => i !== index),
+    }));
+  };
+
+  // Handle detailed expense inputs (otherExpenses, selfExpense)
+  const handleDetailedAdd = (category: 'otherExpenses' | 'selfExpense') => {
+    setFormData(prev => ({
+      ...prev,
+      [category]: [...prev[category], { desc: '', amount: 0 }],
+    }));
+  };
+
+  const handleDetailedChange = (
+    category: 'otherExpenses' | 'selfExpense',
+    index: number,
+    field: 'desc' | 'amount',
+    value: string
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [category]: prev[category].map((item, i) =>
+        i === index
+          ? { ...item, [field]: field === 'amount' ? parseFloat(value) || 0 : value }
+          : item
+      ),
+    }));
+  };
+
+  const handleDetailedRemove = (category: 'otherExpenses' | 'selfExpense', index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [category]: prev[category].filter((_, i) => i !== index),
+    }));
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!selectedMonth) {
+      newErrors.month = 'Please select a month';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (!validateForm()) return;
+
+    updateMonth(selectedMonth, formData);
+    toast({
+      title: 'Expenses saved!',
+      description: `${selectedMonth} expenses have been updated successfully.`,
+    });
+    navigate('/months');
+  };
+
+  const renderSimpleCategory = (
+    category: 'snacks' | 'food' | 'travellingCharge' | 'petrol',
+    label: string,
+    icon: string
+  ) => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="stat-card"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{icon}</span>
+          <h3 className="font-display font-semibold">{label}</h3>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => handleSimpleArrayAdd(category)}
+          className="gap-1"
+        >
+          <Plus className="w-4 h-4" />
+          Add
+        </Button>
+      </div>
+      <div className="space-y-2">
+        {formData[category].length === 0 && (
+          <p className="text-sm text-muted-foreground italic">No items yet. Click "Add" to start.</p>
+        )}
+        {formData[category].map((value, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={value || ''}
+              onChange={(e) => handleSimpleArrayChange(category, index, e.target.value)}
+              placeholder="Amount"
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => handleSimpleArrayRemove(category, index)}
+              className="text-destructive hover:text-destructive"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+
+  const renderDetailedCategory = (
+    category: 'otherExpenses' | 'selfExpense',
+    label: string,
+    icon: string
+  ) => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="stat-card"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{icon}</span>
+          <h3 className="font-display font-semibold">{label}</h3>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => handleDetailedAdd(category)}
+          className="gap-1"
+        >
+          <Plus className="w-4 h-4" />
+          Add
+        </Button>
+      </div>
+      <div className="space-y-3">
+        {formData[category].length === 0 && (
+          <p className="text-sm text-muted-foreground italic">No items yet. Click "Add" to start.</p>
+        )}
+        {formData[category].map((item, index) => (
+          <div key={index} className="flex items-start gap-2 p-3 rounded-lg bg-muted/50">
+            <div className="flex-1 space-y-2">
+              <Input
+                value={item.desc}
+                onChange={(e) => handleDetailedChange(category, index, 'desc', e.target.value)}
+                placeholder="Description"
+              />
+              <Input
+                type="number"
+                value={item.amount || ''}
+                onChange={(e) => handleDetailedChange(category, index, 'amount', e.target.value)}
+                placeholder="Amount"
+              />
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => handleDetailedRemove(category, index)}
+              className="text-destructive hover:text-destructive mt-1"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="font-display text-2xl font-bold">
+            {editMonth ? 'Edit Expenses' : 'Add Expenses'}
+          </h1>
+          <p className="text-muted-foreground">
+            {editMonth ? `Editing ${editMonth}` : 'Record your monthly expenses'}
+          </p>
+        </div>
+      </div>
+
+      {/* Month Selection */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="stat-card stat-card-primary"
+      >
+        <Label className="text-sm font-medium mb-2 block">Select Month</Label>
+        <Select value={selectedMonth} onValueChange={handleMonthChange}>
+          <SelectTrigger className={cn(errors.month && 'border-destructive')}>
+            <SelectValue placeholder="Choose a month..." />
+          </SelectTrigger>
+          <SelectContent>
+            {MONTHS.map((month) => (
+              <SelectItem key={month} value={month}>
+                {month}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.month && (
+          <p className="text-sm text-destructive mt-1">{errors.month}</p>
+        )}
+      </motion.div>
+
+      {/* Categories Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {renderSimpleCategory('snacks', 'Snacks', '🍿')}
+        {renderSimpleCategory('food', 'Food', '🍽️')}
+        {renderSimpleCategory('travellingCharge', 'Travelling', '🚌')}
+        {renderSimpleCategory('petrol', 'Petrol', '⛽')}
+        {renderDetailedCategory('otherExpenses', 'Other Expenses', '📦')}
+        {renderDetailedCategory('selfExpense', 'Self Expense', '🏠')}
+      </div>
+
+      {/* Submit Button */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="flex justify-end gap-4 pt-4"
+      >
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} className="gap-2">
+          <Save className="w-4 h-4" />
+          Save Expenses
+        </Button>
+      </motion.div>
+    </div>
+  );
+};
+
+export default AddEditExpense;
