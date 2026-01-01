@@ -23,10 +23,15 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Generate years for selection (current year and a few past/future years)
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
+
 const MonthlyView: React.FC = () => {
   const { expenses, searchTerm } = useExpenses();
   const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
   // Filter months based on search
   const filteredMonths = MONTHS.filter((month) =>
@@ -96,20 +101,34 @@ const MonthlyView: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <Calendar className="w-5 h-5 text-primary" />
-          <h2 className="font-display font-semibold text-lg">Select a Month</h2>
+          <h2 className="font-display font-semibold text-lg">Select Period</h2>
         </div>
-        <Select onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Choose month..." />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTHS.map((month) => (
-              <SelectItem key={month} value={month}>
-                {month}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(Number(val))}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {YEARS.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Choose month..." />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((month) => (
+                <SelectItem key={month} value={month}>
+                  {month}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Month Grid */}
