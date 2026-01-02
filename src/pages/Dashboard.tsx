@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, Fuel, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
@@ -31,15 +31,34 @@ const Dashboard: React.FC = () => {
   const monthOptions = ['All', ...MONTHS];
   const currentMonthIndex = monthOptions.indexOf(selectedMonth);
 
-  const handlePrevMonth = () => {
+  const handlePrevMonth = useCallback(() => {
     const newIndex = currentMonthIndex > 0 ? currentMonthIndex - 1 : monthOptions.length - 1;
     setSelectedMonth(monthOptions[newIndex]);
-  };
+  }, [currentMonthIndex, monthOptions, setSelectedMonth]);
 
-  const handleNextMonth = () => {
+  const handleNextMonth = useCallback(() => {
     const newIndex = currentMonthIndex < monthOptions.length - 1 ? currentMonthIndex + 1 : 0;
     setSelectedMonth(monthOptions[newIndex]);
-  };
+  }, [currentMonthIndex, monthOptions, setSelectedMonth]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      if (e.key === 'ArrowLeft') {
+        handlePrevMonth();
+      } else if (e.key === 'ArrowRight') {
+        handleNextMonth();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handlePrevMonth, handleNextMonth]);
 
   // Swipe handlers for mobile
   const swipeHandlers = useSwipe({
