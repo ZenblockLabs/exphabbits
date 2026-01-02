@@ -1,3 +1,4 @@
+// Layout component - v2 - removed direct context dependency
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,9 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useExpenses } from '@/contexts/ExpenseContext';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { SearchInput } from '@/components/SearchInput';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -29,7 +28,6 @@ const navItems = [
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const { searchTerm, setSearchTerm } = useExpenses();
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -132,16 +130,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {/* Search */}
-            <div className="relative w-full max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search expenses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
-              />
-            </div>
+            <SearchInput />
           </div>
         </header>
 
