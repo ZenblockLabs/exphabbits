@@ -61,10 +61,72 @@ export const createEmptyYear = (): YearData => {
   return yearData;
 };
 
-const currentYear = new Date().getFullYear();
+const novemberData: MonthData = {
+  snacks: [35, 25, 50, 80, 85, 20, 40, 94, 299],
+  food: [150],
+  travellingCharge: [110, 110, 110, 65, 22, 90],
+  otherExpenses: [
+    { desc: "Chain brush", amount: 120 },
+    { desc: "Home", amount: 41 },
+    { desc: "Home item", amount: 350 },
+    { desc: "Interest", amount: 1929 },
+    { desc: "Amazon", amount: 1200 },
+    { desc: "B", amount: 380 },
+    { desc: "Rear hugger", amount: 1320 },
+    { desc: "Chain spray", amount: 241 },
+    { desc: "Suspension guard", amount: 383 },
+    { desc: "Rear hugger fitting", amount: 150 },
+    { desc: "Parking", amount: 60 },
+    { desc: "Hospital", amount: 500 },
+    { desc: "Socket", amount: 89 },
+    { desc: "Friend gift t-shirt", amount: 380 },
+    { desc: "To Amma", amount: 1100 },
+    { desc: "Socket", amount: 89 },
+    { desc: "XYXX", amount: 1025 },
+    { desc: "Phone holder", amount: 49 },
+    { desc: "Sandals", amount: 827 },
+    { desc: "Cutting", amount: 150 },
+    { desc: "Snitch pant", amount: 670 },
+  ],
+  selfExpense: [
+    { desc: "PG Rent", amount: 6000 },
+    { desc: "Spotify", amount: 140 },
+    { desc: "Microcontroller", amount: 334 },
+  ],
+  petrol: [510, 820, 920, 160],
+};
+
+const decemberData: MonthData = {
+  snacks: [45, 60, 30, 75],
+  food: [200, 180],
+  travellingCharge: [100, 85, 120],
+  otherExpenses: [
+    { desc: "Christmas gift", amount: 500 },
+    { desc: "Party supplies", amount: 300 },
+    { desc: "New Year prep", amount: 800 },
+  ],
+  selfExpense: [
+    { desc: "PG Rent", amount: 6000 },
+    { desc: "Spotify", amount: 140 },
+  ],
+  petrol: [600, 750, 400],
+};
 
 export const initialExpenseData: ExpenseData = {
-  [currentYear]: createEmptyYear(),
+  2026: {
+    January: createEmptyMonth(),
+    February: createEmptyMonth(),
+    March: createEmptyMonth(),
+    April: createEmptyMonth(),
+    May: createEmptyMonth(),
+    June: createEmptyMonth(),
+    July: createEmptyMonth(),
+    August: createEmptyMonth(),
+    September: createEmptyMonth(),
+    October: createEmptyMonth(),
+    November: { ...novemberData },
+    December: { ...decemberData },
+  },
   2025: {
     January: createEmptyMonth(),
     February: createEmptyMonth(),
@@ -76,55 +138,8 @@ export const initialExpenseData: ExpenseData = {
     August: createEmptyMonth(),
     September: createEmptyMonth(),
     October: createEmptyMonth(),
-    November: {
-      snacks: [35, 25, 50, 80, 85, 20, 40, 94, 299],
-      food: [150],
-      travellingCharge: [110, 110, 110, 65, 22, 90],
-      otherExpenses: [
-        { desc: "Chain brush", amount: 120 },
-        { desc: "Home", amount: 41 },
-        { desc: "Home item", amount: 350 },
-        { desc: "Interest", amount: 1929 },
-        { desc: "Amazon", amount: 1200 },
-        { desc: "B", amount: 380 },
-        { desc: "Rear hugger", amount: 1320 },
-        { desc: "Chain spray", amount: 241 },
-        { desc: "Suspension guard", amount: 383 },
-        { desc: "Rear hugger fitting", amount: 150 },
-        { desc: "Parking", amount: 60 },
-        { desc: "Hospital", amount: 500 },
-        { desc: "Socket", amount: 89 },
-        { desc: "Friend gift t-shirt", amount: 380 },
-        { desc: "To Amma", amount: 1100 },
-        { desc: "Socket", amount: 89 },
-        { desc: "XYXX", amount: 1025 },
-        { desc: "Phone holder", amount: 49 },
-        { desc: "Sandals", amount: 827 },
-        { desc: "Cutting", amount: 150 },
-        { desc: "Snitch pant", amount: 670 },
-      ],
-      selfExpense: [
-        { desc: "PG Rent", amount: 6000 },
-        { desc: "Spotify", amount: 140 },
-        { desc: "Microcontroller", amount: 334 },
-      ],
-      petrol: [510, 820, 920, 160],
-    },
-    December: {
-      snacks: [45, 60, 30, 75],
-      food: [200, 180],
-      travellingCharge: [100, 85, 120],
-      otherExpenses: [
-        { desc: "Christmas gift", amount: 500 },
-        { desc: "Party supplies", amount: 300 },
-        { desc: "New Year prep", amount: 800 },
-      ],
-      selfExpense: [
-        { desc: "PG Rent", amount: 6000 },
-        { desc: "Spotify", amount: 140 },
-      ],
-      petrol: [600, 750, 400],
-    },
+    November: { ...novemberData },
+    December: { ...decemberData },
   },
 };
 
