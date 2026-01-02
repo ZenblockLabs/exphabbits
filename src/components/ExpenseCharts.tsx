@@ -33,8 +33,8 @@ const formatCurrency = (value: number) => {
 };
 
 export const CategoryPieChart: React.FC = () => {
-  const { getYearData } = useExpenses();
-  const yearData = getYearData();
+  const { getFilteredYearData, selectedMonth } = useExpenses();
+  const yearData = getFilteredYearData();
   const breakdown = getCategoryBreakdown(yearData);
 
   const data = Object.entries(CATEGORIES).map(([key, config], index) => ({
@@ -66,7 +66,9 @@ export const CategoryPieChart: React.FC = () => {
       transition={{ duration: 0.5 }}
       className="stat-card h-full"
     >
-      <h3 className="font-display font-semibold text-lg mb-4">Category Breakdown</h3>
+      <h3 className="font-display font-semibold text-lg mb-4">
+        Category Breakdown {selectedMonth !== 'All' && `- ${selectedMonth}`}
+      </h3>
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
