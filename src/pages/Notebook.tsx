@@ -7,12 +7,15 @@ import {
   X, 
   Palette,
   Search,
-  BookOpen
+  BookOpen,
+  Tag,
+  Hash
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -22,9 +25,20 @@ interface Note {
   content: string;
   color: string;
   pinned: boolean;
+  labels: string[];
   createdAt: Date;
   updatedAt: Date;
 }
+
+const DEFAULT_LABELS = ['Personal', 'Work', 'Ideas', 'Important', 'To-Do'];
+
+const LABEL_COLORS: Record<string, string> = {
+  'Personal': 'bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/30',
+  'Work': 'bg-purple-500/20 text-purple-600 dark:text-purple-400 hover:bg-purple-500/30',
+  'Ideas': 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/30',
+  'Important': 'bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/30',
+  'To-Do': 'bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500/30',
+};
 
 const NOTE_COLORS = [
   { name: 'Default', value: 'bg-card', border: 'border-border' },
@@ -39,6 +53,8 @@ const NOTE_COLORS = [
 
 const STORAGE_KEY = 'notebook-notes';
 
+const LABELS_STORAGE_KEY = 'notebook-labels';
+
 const Notebook: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -46,23 +62,68 @@ const Notebook: React.FC = () => {
       const parsed = JSON.parse(saved);
       return parsed.map((n: any) => ({
         ...n,
+        labels: n.labels || [],
         createdAt: new Date(n.createdAt),
         updatedAt: new Date(n.updatedAt),
       }));
     }
     return [];
   });
+
+  const [customLabels, setCustomLabels] = useState<string[]>(() => {
+    const saved = localStorage.getItem(LABELS_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLabelFilter, setSelectedLabelFilter] = useState<string | null>(null);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [newNote, setNewNote] = useState({ title: '', content: '', color: 'bg-card' });
+  const [newNote, setNewNote] = useState({ title: '', content: '', color: 'bg-card', labels: [] as string[] });
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
+  const [newLabelInput, setNewLabelInput] = useState('');
+  const [showLabelInput, setShowLabelInput] = useState(false);
+
+  const allLabels = [...DEFAULT_LABELS, ...customLabels];
 
   // Save notes to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
   }, [notes]);
+
+  // Save custom labels to localStorage
+  useEffect(() => {
+    localStorage.setItem(LABELS_STORAGE_KEY, JSON.stringify(customLabels));
+  }, [customLabels]);
+
+  const addCustomLabel = (label: string) => {
+    const trimmed = label.trim();
+    if (trimmed && !allLabels.includes(trimmed)) {
+      setCustomLabels(prev => [...prev, trimmed]);
+      toast.success(`Label "${trimmed}" created`);
+    }
+    setNewLabelInput('');
+    setShowLabelInput(false);
+  };
+
+  const getLabelColor = (label: string) => {
+    return LABEL_COLORS[label] || 'bg-muted text-muted-foreground hover:bg-muted/80';
+  };
+
+  const toggleNoteLabel = (noteId: string, label: string) => {
+    setNotes(prev => prev.map(n => {
+      if (n.id === noteId) {
+        const hasLabel = n.labels.includes(label);
+        return {
+          ...n,
+          labels: hasLabel 
+            ? n.labels.filter(l => l !== label)
+            : [...n.labels, label]
+        };
+      }
+      return n;
+    }));
+  };
 
   const addNote = () => {
     if (!newNote.title.trim() && !newNote.content.trim()) {
@@ -76,12 +137,13 @@ const Notebook: React.FC = () => {
       content: newNote.content.trim(),
       color: newNote.color,
       pinned: false,
+      labels: newNote.labels,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     setNotes(prev => [note, ...prev]);
-    setNewNote({ title: '', content: '', color: 'bg-card' });
+    setNewNote({ title: '', content: '', color: 'bg-card', labels: [] });
     setIsAddingNote(false);
     toast.success('Note added');
   };
@@ -117,10 +179,12 @@ const Notebook: React.FC = () => {
 
   // Filter and sort notes
   const filteredNotes = notes
-    .filter(note => 
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    .filter(note => {
+      const matchesSearch = note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLabel = !selectedLabelFilter || note.labels.includes(selectedLabelFilter);
+      return matchesSearch && matchesLabel;
+    })
     .sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
@@ -160,6 +224,79 @@ const Notebook: React.FC = () => {
         </div>
       </div>
 
+      {/* Label Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          <Tag className="w-4 h-4" /> Filter:
+        </span>
+        <Badge
+          variant="outline"
+          className={cn(
+            "cursor-pointer transition-all",
+            !selectedLabelFilter && "bg-primary text-primary-foreground"
+          )}
+          onClick={() => setSelectedLabelFilter(null)}
+        >
+          All
+        </Badge>
+        {allLabels.map((label) => (
+          <Badge
+            key={label}
+            className={cn(
+              "cursor-pointer transition-all border-0",
+              selectedLabelFilter === label 
+                ? "ring-2 ring-primary ring-offset-2" 
+                : "",
+              getLabelColor(label)
+            )}
+            onClick={() => setSelectedLabelFilter(selectedLabelFilter === label ? null : label)}
+          >
+            {label}
+          </Badge>
+        ))}
+        {!showLabelInput ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => setShowLabelInput(true)}
+          >
+            <Plus className="w-3 h-3 mr-1" /> New Label
+          </Button>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Input
+              value={newLabelInput}
+              onChange={(e) => setNewLabelInput(e.target.value)}
+              placeholder="Label name..."
+              className="h-6 w-28 text-xs"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') addCustomLabel(newLabelInput);
+                if (e.key === 'Escape') {
+                  setShowLabelInput(false);
+                  setNewLabelInput('');
+                }
+              }}
+            />
+            <Button size="sm" className="h-6 px-2" onClick={() => addCustomLabel(newLabelInput)}>
+              Add
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 px-1"
+              onClick={() => {
+                setShowLabelInput(false);
+                setNewLabelInput('');
+              }}
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+      </div>
+
       {/* Add Note Input */}
       <motion.div
         layout
@@ -193,6 +330,30 @@ const Notebook: React.FC = () => {
               onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
               className="border-0 bg-transparent focus-visible:ring-0 p-0 min-h-[100px] resize-none"
             />
+            {/* Labels for new note */}
+            <div className="flex flex-wrap gap-1">
+              {allLabels.map((label) => (
+                <Badge
+                  key={label}
+                  className={cn(
+                    "cursor-pointer transition-all text-xs border-0",
+                    newNote.labels.includes(label) 
+                      ? "ring-2 ring-primary ring-offset-1" 
+                      : "opacity-60",
+                    getLabelColor(label)
+                  )}
+                  onClick={() => setNewNote(prev => ({
+                    ...prev,
+                    labels: prev.labels.includes(label)
+                      ? prev.labels.filter(l => l !== label)
+                      : [...prev.labels, label]
+                  }))}
+                >
+                  <Hash className="w-3 h-3 mr-0.5" />
+                  {label}
+                </Badge>
+              ))}
+            </div>
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-1">
                 {NOTE_COLORS.map((color) => (
@@ -215,7 +376,7 @@ const Notebook: React.FC = () => {
                   size="sm"
                   onClick={() => {
                     setIsAddingNote(false);
-                    setNewNote({ title: '', content: '', color: 'bg-card' });
+                    setNewNote({ title: '', content: '', color: 'bg-card', labels: [] });
                   }}
                 >
                   Cancel
@@ -245,9 +406,12 @@ const Notebook: React.FC = () => {
                   onDelete={deleteNote}
                   onTogglePin={togglePin}
                   onChangeColor={changeColor}
+                  onToggleLabel={toggleNoteLabel}
                   showColorPicker={showColorPicker}
                   setShowColorPicker={setShowColorPicker}
                   getColorBorder={getColorBorder}
+                  getLabelColor={getLabelColor}
+                  allLabels={allLabels}
                 />
               ))}
             </AnimatePresence>
@@ -273,9 +437,12 @@ const Notebook: React.FC = () => {
                   onDelete={deleteNote}
                   onTogglePin={togglePin}
                   onChangeColor={changeColor}
+                  onToggleLabel={toggleNoteLabel}
                   showColorPicker={showColorPicker}
                   setShowColorPicker={setShowColorPicker}
                   getColorBorder={getColorBorder}
+                  getLabelColor={getLabelColor}
+                  allLabels={allLabels}
                 />
               ))}
             </AnimatePresence>
@@ -320,6 +487,35 @@ const Notebook: React.FC = () => {
                 onChange={(e) => setEditingNote({ ...editingNote, content: e.target.value })}
                 className="min-h-[200px] resize-none"
               />
+              {/* Labels in edit dialog */}
+              <div className="space-y-2">
+                <span className="text-sm font-medium flex items-center gap-1">
+                  <Tag className="w-4 h-4" /> Labels
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {allLabels.map((label) => (
+                    <Badge
+                      key={label}
+                      className={cn(
+                        "cursor-pointer transition-all text-xs border-0",
+                        editingNote.labels.includes(label) 
+                          ? "ring-2 ring-primary ring-offset-1" 
+                          : "opacity-60",
+                        getLabelColor(label)
+                      )}
+                      onClick={() => setEditingNote({
+                        ...editingNote,
+                        labels: editingNote.labels.includes(label)
+                          ? editingNote.labels.filter(l => l !== label)
+                          : [...editingNote.labels, label]
+                      })}
+                    >
+                      <Hash className="w-3 h-3 mr-0.5" />
+                      {label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
               <div className="flex items-center gap-1">
                 {NOTE_COLORS.map((color) => (
                   <button
@@ -358,9 +554,12 @@ interface NoteCardProps {
   onDelete: (id: string) => void;
   onTogglePin: (id: string) => void;
   onChangeColor: (id: string, color: string) => void;
+  onToggleLabel: (noteId: string, label: string) => void;
   showColorPicker: string | null;
   setShowColorPicker: (id: string | null) => void;
   getColorBorder: (color: string) => string;
+  getLabelColor: (label: string) => string;
+  allLabels: string[];
 }
 
 const NoteCard: React.FC<NoteCardProps> = ({
@@ -369,10 +568,15 @@ const NoteCard: React.FC<NoteCardProps> = ({
   onDelete,
   onTogglePin,
   onChangeColor,
+  onToggleLabel,
   showColorPicker,
   setShowColorPicker,
   getColorBorder,
+  getLabelColor,
+  allLabels,
 }) => {
+  const [showLabelPicker, setShowLabelPicker] = useState(false);
+
   return (
     <motion.div
       layout
@@ -395,6 +599,21 @@ const NoteCard: React.FC<NoteCardProps> = ({
         </p>
       )}
       
+      {/* Labels Display */}
+      {note.labels.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {note.labels.map((label) => (
+            <Badge
+              key={label}
+              className={cn("text-xs border-0 py-0", getLabelColor(label))}
+            >
+              <Hash className="w-2.5 h-2.5 mr-0.5" />
+              {label}
+            </Badge>
+          ))}
+        </div>
+      )}
+      
       {/* Actions */}
       <div 
         className="flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -413,7 +632,43 @@ const NoteCard: React.FC<NoteCardProps> = ({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => setShowColorPicker(showColorPicker === note.id ? null : note.id)}
+            onClick={() => {
+              setShowLabelPicker(!showLabelPicker);
+              setShowColorPicker(null);
+            }}
+          >
+            <Tag className="w-4 h-4" />
+          </Button>
+          {showLabelPicker && (
+            <div className="absolute bottom-full left-0 mb-2 p-2 bg-popover rounded-lg shadow-lg border flex flex-wrap gap-1 z-10 min-w-[200px]">
+              {allLabels.map((label) => (
+                <Badge
+                  key={label}
+                  className={cn(
+                    "cursor-pointer transition-all text-xs border-0",
+                    note.labels.includes(label) 
+                      ? "ring-2 ring-primary ring-offset-1" 
+                      : "opacity-60",
+                    getLabelColor(label)
+                  )}
+                  onClick={() => onToggleLabel(note.id, label)}
+                >
+                  <Hash className="w-3 h-3 mr-0.5" />
+                  {label}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              setShowColorPicker(showColorPicker === note.id ? null : note.id);
+              setShowLabelPicker(false);
+            }}
           >
             <Palette className="w-4 h-4" />
           </Button>
