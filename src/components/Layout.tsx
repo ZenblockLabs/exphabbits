@@ -305,7 +305,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Footer Stats - hide when collapsed */}
-          {!collapsed && (
+          {/* /* {!collapsed && (
             <div className="p-4 m-2 rounded-xl bg-sidebar-accent">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-sidebar-primary" />
@@ -315,7 +315,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Track and manage your expenses & habits.
               </p>
             </div>
-          )}
+          )} */ */}
         </div>
       </aside>
 
