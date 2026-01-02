@@ -47,9 +47,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
           )) {
             merged[2025] = initialExpenseData[2025];
           }
-          if (!parsed[2026] || Object.values(parsed[2026]).every((m: any) => 
-            m.snacks?.length === 0 && m.food?.length === 0 && m.petrol?.length === 0
-          )) {
+          if (!parsed[2026]) {
             merged[2026] = initialExpenseData[2026];
           }
           return merged;
