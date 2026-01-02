@@ -1,5 +1,5 @@
-import React, { useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useCallback, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Wallet, TrendingUp, Fuel, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { calculateYearTotals, MONTHS } from '@/data/expenseData';
@@ -20,6 +20,7 @@ const Dashboard: React.FC = () => {
   const { getFilteredYearData, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, availableYears } = useExpenses();
   const yearData = getFilteredYearData();
   const totals = calculateYearTotals(yearData);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
 
   // Generate years for dropdown (5 years back and forward from current)
   const currentYear = new Date().getFullYear();
@@ -32,11 +33,13 @@ const Dashboard: React.FC = () => {
   const currentMonthIndex = monthOptions.indexOf(selectedMonth);
 
   const handlePrevMonth = useCallback(() => {
+    setSlideDirection('right');
     const newIndex = currentMonthIndex > 0 ? currentMonthIndex - 1 : monthOptions.length - 1;
     setSelectedMonth(monthOptions[newIndex]);
   }, [currentMonthIndex, monthOptions, setSelectedMonth]);
 
   const handleNextMonth = useCallback(() => {
+    setSlideDirection('left');
     const newIndex = currentMonthIndex < monthOptions.length - 1 ? currentMonthIndex + 1 : 0;
     setSelectedMonth(monthOptions[newIndex]);
   }, [currentMonthIndex, monthOptions, setSelectedMonth]);
@@ -65,6 +68,22 @@ const Dashboard: React.FC = () => {
     onSwipeLeft: handleNextMonth,
     onSwipeRight: handlePrevMonth,
   });
+
+  // Slide animation variants
+  const slideVariants = {
+    enter: (direction: 'left' | 'right') => ({
+      x: direction === 'left' ? 100 : -100,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: 'left' | 'right') => ({
+      x: direction === 'left' ? -100 : 100,
+      opacity: 0,
+    }),
+  };
 
   return (
     <div className="space-y-8 touch-pan-y" {...swipeHandlers}>
@@ -128,41 +147,52 @@ const Dashboard: React.FC = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <StatCard
-          title={selectedMonth === 'All' ? 'Year Total' : `${selectedMonth} Total`}
-          value={totals.yearTotal}
-          icon={DollarSign}
-          variant="primary"
-          subtitle={selectedMonth === 'All' ? `All expenses in ${selectedYear}` : `Expenses in ${selectedMonth} ${selectedYear}`}
-          delay={0}
-        />
-        <StatCard
-          title="Self Expenses"
-          value={totals.totalSelf}
-          icon={Wallet}
-          variant="default"
-          subtitle="Rent, subscriptions, etc."
-          delay={0.1}
-        />
-        <StatCard
-          title="Other Expenses"
-          value={totals.totalOther}
-          icon={TrendingUp}
-          variant="accent"
-          subtitle="Daily spending"
-          delay={0.2}
-        />
-        <StatCard
-          title="Petrol"
-          value={totals.totalPetrol}
-          icon={Fuel}
-          variant="default"
-          subtitle="Fuel expenses"
-          delay={0.3}
-        />
-      </div>
+      {/* Stats Grid with Animation */}
+      <AnimatePresence mode="wait" custom={slideDirection}>
+        <motion.div
+          key={`${selectedYear}-${selectedMonth}`}
+          custom={slideDirection}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
+        >
+          <StatCard
+            title={selectedMonth === 'All' ? 'Year Total' : `${selectedMonth} Total`}
+            value={totals.yearTotal}
+            icon={DollarSign}
+            variant="primary"
+            subtitle={selectedMonth === 'All' ? `All expenses in ${selectedYear}` : `Expenses in ${selectedMonth} ${selectedYear}`}
+            delay={0}
+          />
+          <StatCard
+            title="Self Expenses"
+            value={totals.totalSelf}
+            icon={Wallet}
+            variant="default"
+            subtitle="Rent, subscriptions, etc."
+            delay={0.1}
+          />
+          <StatCard
+            title="Other Expenses"
+            value={totals.totalOther}
+            icon={TrendingUp}
+            variant="accent"
+            subtitle="Daily spending"
+            delay={0.2}
+          />
+          <StatCard
+            title="Petrol"
+            value={totals.totalPetrol}
+            icon={Fuel}
+            variant="default"
+            subtitle="Fuel expenses"
+            delay={0.3}
+          />
+        </motion.div>
+      </AnimatePresence>
 
       {/* Charts and Budget */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
