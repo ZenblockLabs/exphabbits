@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import {
   Target,
+  Flame,
+  TrendingUp,
+  CheckCircle2,
+  Circle,
   Trash2,
   Dumbbell,
   BookOpen,
@@ -11,14 +15,12 @@ import {
   Star,
   Heart,
   Zap,
-  ChevronLeft,
-  ChevronRight,
-  Check,
-  Plus,
 } from 'lucide-react';
 import { useHabits } from '@/contexts/HabitContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,8 +32,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Link } from 'react-router-dom';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const iconMap: Record<string, React.ElementType> = {
   Dumbbell,
@@ -45,208 +45,298 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 const HabitsDashboard: React.FC = () => {
-  const { habits, toggleHabitCompletion, deleteHabit } = useHabits();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const { habits, toggleHabitCompletion, deleteHabit, getCompletionRate } = useHabits();
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = subDays(new Date(), 6 - i);
+    return {
+      date: format(date, 'yyyy-MM-dd'),
+      label: format(date, 'EEE'),
+      dayNum: format(date, 'd'),
+    };
+  });
 
-  const goToPreviousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-  const goToNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const completedToday = habits.filter((h) =>
+    h.completedDates.includes(today)
+  ).length;
+  const totalHabits = habits.length;
+  const overallProgress = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
 
-  const today = new Date();
+  // Calculate current streak (simplified)
+  const calculateStreak = () => {
+    let streak = 0;
+    const checkDate = new Date();
+    
+    while (true) {
+      const dateStr = format(checkDate, 'yyyy-MM-dd');
+      const allCompleted = habits.every((h) => h.completedDates.includes(dateStr));
+      if (allCompleted && habits.length > 0) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  };
+
+  const currentStreak = calculateStreak();
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            Habit Tracker
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Track your daily habits
-          </p>
-        </div>
-        <Link to="/habits/add">
-          <Button size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Habit
-          </Button>
-        </Link>
+      <div>
+        <h1 className="text-2xl font-display font-bold text-foreground">
+          Habit Tracking
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Build better habits, one day at a time
+        </p>
       </div>
 
-      {/* Main Grid Card */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          {/* Month Header with Navigation */}
-          <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border">
-            <Button variant="ghost" size="icon" onClick={goToPreviousMonth}>
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <h2 className="text-lg font-semibold text-foreground">
-              {format(currentMonth, 'MMMM yyyy')}
-            </h2>
-            <Button variant="ghost" size="icon" onClick={goToNextMonth}>
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-
-          <div className="flex">
-            {/* Habits Column (Fixed) */}
-            <div className="flex-shrink-0 w-40 border-r border-border bg-muted/30">
-              {/* Empty cell for header alignment */}
-              <div className="h-12 border-b border-border" />
-              
-              {/* Habit Names */}
-              {habits.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground text-sm">
-                  No habits yet
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <Target className="h-5 w-5 text-primary" />
                 </div>
-              ) : (
-                habits.map((habit, index) => {
-                  const IconComponent = iconMap[habit.icon] || Target;
-                  return (
-                    <motion.div
-                      key={habit.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="h-12 flex items-center gap-2 px-3 border-b border-border group"
-                    >
-                      <div
-                        className="p-1.5 rounded-md flex-shrink-0"
-                        style={{ backgroundColor: `${habit.color}20` }}
-                      >
-                        <IconComponent
-                          className="h-4 w-4"
-                          style={{ color: habit.color }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium text-foreground truncate flex-1">
-                        {habit.name}
-                      </span>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Habit</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "{habit.name}"?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteHabit(habit.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </motion.div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Calendar Grid (Scrollable) */}
-            <ScrollArea className="flex-1">
-              <div className="min-w-max">
-                {/* Day Numbers Header */}
-                <div className="flex h-12 border-b border-border">
-                  {daysInMonth.map((day) => {
-                    const isToday = isSameDay(day, today);
-                    return (
-                      <div
-                        key={day.toISOString()}
-                        className={`w-10 flex-shrink-0 flex flex-col items-center justify-center border-r border-border/50 ${
-                          isToday ? 'bg-primary/10' : ''
-                        }`}
-                      >
-                        <span className="text-[10px] text-muted-foreground uppercase">
-                          {format(day, 'EEE').slice(0, 2)}
-                        </span>
-                        <span
-                          className={`text-sm font-medium ${
-                            isToday ? 'text-primary' : 'text-foreground'
-                          }`}
-                        >
-                          {format(day, 'd')}
-                        </span>
-                      </div>
-                    );
-                  })}
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{totalHabits}</p>
+                  <p className="text-xs text-muted-foreground">Active Habits</p>
                 </div>
-
-                {/* Habit Rows */}
-                {habits.map((habit) => (
-                  <div key={habit.id} className="flex h-12 border-b border-border">
-                    {daysInMonth.map((day) => {
-                      const dateStr = format(day, 'yyyy-MM-dd');
-                      const isCompleted = habit.completedDates.includes(dateStr);
-                      const isToday = isSameDay(day, today);
-
-                      return (
-                        <button
-                          key={day.toISOString()}
-                          onClick={() => toggleHabitCompletion(habit.id, dateStr)}
-                          className={`w-10 flex-shrink-0 flex items-center justify-center border-r border-border/50 transition-all duration-200 hover:bg-muted/50 ${
-                            isToday ? 'bg-primary/5' : ''
-                          }`}
-                        >
-                          <div
-                            className={`w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 ${
-                              isCompleted
-                                ? 'scale-100'
-                                : 'border-2 border-dashed border-muted-foreground/30 hover:border-muted-foreground/50'
-                            }`}
-                            style={{
-                              backgroundColor: isCompleted ? habit.color : 'transparent',
-                            }}
-                          >
-                            {isCompleted && (
-                              <Check className="h-4 w-4 text-white" />
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
               </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-500/20">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">
+                    {completedToday}/{totalHabits}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Done Today</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-orange-500/20">
+                  <Flame className="h-5 w-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{currentStreak}</p>
+                  <p className="text-xs text-muted-foreground">Day Streak</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/20">
+                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{overallProgress}%</p>
+                  <p className="text-xs text-muted-foreground">Today's Progress</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Today's Progress */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold">Today's Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress value={overallProgress} className="h-3" />
+          <p className="text-sm text-muted-foreground mt-2">
+            {completedToday} of {totalHabits} habits completed
+          </p>
         </CardContent>
       </Card>
 
-      {/* Empty State */}
-      {habits.length === 0 && (
-        <Card className="p-8 text-center">
-          <Target className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground mb-4">
-            No habits yet. Start tracking your daily habits!
-          </p>
-          <Link to="/habits/add">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First Habit
-            </Button>
-          </Link>
-        </Card>
-      )}
+      {/* Habits List */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground">Your Habits</h2>
+        
+        {habits.length === 0 ? (
+          <Card className="p-8 text-center">
+            <Target className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+            <p className="text-muted-foreground">No habits yet. Start by adding one!</p>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {habits.map((habit, index) => {
+              const IconComponent = iconMap[habit.icon] || Target;
+              const completionRate = getCompletionRate(habit.id, 7);
+              const isCompletedToday = habit.completedDates.includes(today);
+
+              return (
+                <motion.div
+                  key={habit.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        {/* Icon & Toggle */}
+                        <button
+                          onClick={() => toggleHabitCompletion(habit.id, today)}
+                          className="flex-shrink-0 mt-1"
+                        >
+                          <div
+                            className="p-2 rounded-lg transition-all duration-200"
+                            style={{
+                              backgroundColor: isCompletedToday
+                                ? habit.color
+                                : `${habit.color}20`,
+                            }}
+                          >
+                            {isCompletedToday ? (
+                              <CheckCircle2 className="h-5 w-5 text-white" />
+                            ) : (
+                              <IconComponent
+                                className="h-5 w-5"
+                                style={{ color: habit.color }}
+                              />
+                            )}
+                          </div>
+                        </button>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3
+                              className={`font-medium ${
+                                isCompletedToday
+                                  ? 'line-through text-muted-foreground'
+                                  : 'text-foreground'
+                              }`}
+                            >
+                              {habit.name}
+                            </h3>
+                            <Badge variant="secondary" className="text-xs">
+                              {habit.frequency}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {habit.description}
+                          </p>
+
+                          {/* Weekly Progress */}
+                          <div className="flex items-center gap-1">
+                            {last7Days.map((day) => {
+                              const isCompleted = habit.completedDates.includes(day.date);
+                              return (
+                                <button
+                                  key={day.date}
+                                  onClick={() =>
+                                    toggleHabitCompletion(habit.id, day.date)
+                                  }
+                                  className="flex flex-col items-center gap-1 p-1 rounded hover:bg-muted/50 transition-colors"
+                                >
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {day.label}
+                                  </span>
+                                  {isCompleted ? (
+                                    <CheckCircle2
+                                      className="h-5 w-5"
+                                      style={{ color: habit.color }}
+                                    />
+                                  ) : (
+                                    <Circle className="h-5 w-5 text-muted-foreground/30" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                            <div className="ml-2 pl-2 border-l border-border">
+                              <span className="text-sm font-medium text-foreground">
+                                {completionRate}%
+                              </span>
+                              <p className="text-[10px] text-muted-foreground">7-day</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Delete */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Habit</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{habit.name}"? This
+                                action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteHabit(habit.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
