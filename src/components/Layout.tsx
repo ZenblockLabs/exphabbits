@@ -20,7 +20,8 @@ import {
   Settings,
   Flame,
   User,
-  BookOpen
+  BookOpen,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ const navGroups: NavGroup[] = [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
       { to: '/months', icon: Calendar, label: 'Monthly View' },
       { to: '/add', icon: PlusCircle, label: 'Add Expense' },
+      { to: '/recurring', icon: RefreshCw, label: 'Recurring' },
     ],
   },
   {
