@@ -1,11 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Fuel, DollarSign } from 'lucide-react';
+import { Wallet, TrendingUp, Fuel, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { calculateYearTotals, MONTHS } from '@/data/expenseData';
 import { StatCard } from '@/components/StatCard';
 import { CategoryPieChart, MonthlyBarChart } from '@/components/ExpenseCharts';
 import { BudgetProgress } from '@/components/BudgetProgress';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -24,6 +25,20 @@ const Dashboard: React.FC = () => {
   const allYears = Array.from(
     new Set([...availableYears, ...Array.from({ length: 11 }, (_, i) => currentYear - 5 + i)])
   ).sort((a, b) => b - a);
+
+  // Month navigation options: "All" + 12 months
+  const monthOptions = ['All', ...MONTHS];
+  const currentMonthIndex = monthOptions.indexOf(selectedMonth);
+
+  const handlePrevMonth = () => {
+    const newIndex = currentMonthIndex > 0 ? currentMonthIndex - 1 : monthOptions.length - 1;
+    setSelectedMonth(monthOptions[newIndex]);
+  };
+
+  const handleNextMonth = () => {
+    const newIndex = currentMonthIndex < monthOptions.length - 1 ? currentMonthIndex + 1 : 0;
+    setSelectedMonth(monthOptions[newIndex]);
+  };
 
   return (
     <div className="space-y-8">
@@ -45,19 +60,27 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Month:</span>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Months</SelectItem>
-                  {MONTHS.map((month) => (
-                    <SelectItem key={month} value={month}>
-                      {month.slice(0, 3)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handlePrevMonth}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="w-16 text-center text-sm font-medium">
+                  {selectedMonth === 'All' ? 'All' : selectedMonth.slice(0, 3)}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleNextMonth}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Year:</span>
