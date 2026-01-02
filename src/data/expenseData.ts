@@ -159,6 +159,7 @@ const aprilData: MonthData = {
     { desc: "Locker key", amount: 50 },
     { desc: "Watch", amount: 1329 },
     { desc: "Gas", amount: 1050 },
+    { desc: "50gram gold", amount: 410000 },
   ],
   selfExpense: [
     { desc: "PG Rent", amount: 6000 },
@@ -171,7 +172,6 @@ const aprilData: MonthData = {
     { desc: "Home god", amount: 120 },
     { desc: "Laptop stand", amount: 228 },
     { desc: "Alarm clock", amount: 349 },
-    { desc: "50gram gold", amount: 430000 },
   ],
   petrol: [210, 210, 50, 190, 180, 280, 150],
 };
