@@ -1,3 +1,4 @@
+// ExpenseContext - provides expense data and budget management
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ExpenseData, YearData, MonthData, initialExpenseData, createEmptyYear, CATEGORIES } from '@/data/expenseData';
 
