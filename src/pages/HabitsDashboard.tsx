@@ -182,7 +182,6 @@ const HabitsDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Habit Analytics */}
       {/* Habits Calendar Grid */}
       <HabitsCalendarGrid
         habits={filteredHabits}
@@ -191,6 +190,7 @@ const HabitsDashboard: React.FC = () => {
         iconMap={iconMap}
       />
 
+      {/* Habit Analytics */}
       <HabitAnalytics habits={habits} />
 
       {/* Streak Leaderboard */}
@@ -198,14 +198,6 @@ const HabitsDashboard: React.FC = () => {
 
       {/* Category Filter */}
       <HabitCategoryFilter selectedCategory={categoryFilter} onCategoryChange={setCategoryFilter} />
-
-      {/* Habits Calendar Grid */}
-      <HabitsCalendarGrid
-        habits={filteredHabits}
-        toggleHabitCompletion={toggleHabitCompletion}
-        deleteHabit={deleteHabit}
-        iconMap={iconMap}
-      />
     </div>
   );
 };
