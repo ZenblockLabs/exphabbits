@@ -19,7 +19,7 @@ import {
   ChevronRight,
   Trophy,
 } from 'lucide-react';
-import { useHabits } from '@/contexts/HabitContext';
+import { useHabits, HABIT_CATEGORIES } from '@/contexts/HabitContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -37,6 +37,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import StreakLeaderboard from '@/components/StreakLeaderboard';
+import HabitAnalytics from '@/components/HabitAnalytics';
+import HabitCategoryFilter from '@/components/HabitCategoryFilter';
 import { useMilestoneSound } from '@/hooks/useMilestoneSound';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -51,7 +53,11 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 const HabitsDashboard: React.FC = () => {
-  const { habits, toggleHabitCompletion, deleteHabit, getCompletionRate } = useHabits();
+  const { habits, toggleHabitCompletion, deleteHabit, getCompletionRate, categoryFilter, setCategoryFilter } = useHabits();
+
+  const filteredHabits = categoryFilter === 'all' 
+    ? habits 
+    : habits.filter((h) => h.category === categoryFilter);
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -199,12 +205,21 @@ const HabitsDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Habit Analytics */}
+      <HabitAnalytics habits={habits} />
+
       {/* Streak Leaderboard */}
-      <StreakLeaderboard habits={habits} iconMap={iconMap} />
+      <StreakLeaderboard habits={filteredHabits} iconMap={iconMap} />
+
+      {/* Category Filter */}
+      <HabitCategoryFilter 
+        selectedCategory={categoryFilter} 
+        onCategoryChange={setCategoryFilter} 
+      />
 
       {/* Habits Calendar Grid */}
       <HabitsCalendarGrid 
-        habits={habits}
+        habits={filteredHabits}
         toggleHabitCompletion={toggleHabitCompletion}
         deleteHabit={deleteHabit}
         iconMap={iconMap}
