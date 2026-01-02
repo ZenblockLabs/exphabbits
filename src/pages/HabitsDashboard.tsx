@@ -340,9 +340,27 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                       habit.completedDates.includes(format(day, 'yyyy-MM-dd'))
                     ).length;
                     const periodRate = Math.round((completedInPeriod / displayDays.length) * 100);
+                    
+                    // Calculate current streak
+                    const calculateHabitStreak = () => {
+                      let streak = 0;
+                      const checkDate = new Date();
+                      while (true) {
+                        const dateStr = format(checkDate, 'yyyy-MM-dd');
+                        if (habit.completedDates.includes(dateStr)) {
+                          streak++;
+                          checkDate.setDate(checkDate.getDate() - 1);
+                        } else {
+                          break;
+                        }
+                      }
+                      return streak;
+                    };
+                    const habitStreak = calculateHabitStreak();
+                    
                     return (
                       <tr key={habit.id} className="border-b border-border last:border-b-0 group">
-                        <td className="sticky left-0 bg-background z-10 px-3 py-3 min-w-[160px]">
+                        <td className="sticky left-0 bg-background z-10 px-3 py-3 min-w-[200px]">
                           <div className="flex items-center gap-2">
                             <div
                               className="p-1.5 rounded-md flex-shrink-0"
@@ -356,6 +374,21 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                             <span className="text-sm font-medium text-foreground whitespace-nowrap">
                               {habit.name}
                             </span>
+                            {habitStreak > 0 && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-500">
+                                      <Flame className="h-3 w-3" />
+                                      <span className="text-xs font-semibold">{habitStreak}</span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{habitStreak} day streak</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
