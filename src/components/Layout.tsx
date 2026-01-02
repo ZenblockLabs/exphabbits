@@ -1,4 +1,4 @@
-// Layout component - v2 - removed direct context dependency
+// Layout component - v3 - grouped navigation
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,27 +9,73 @@ import {
   Menu, 
   X,
   Wallet,
-  TrendingUp
+  TrendingUp,
+  ChevronDown,
+  Receipt,
+  Target,
+  CheckSquare,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/SearchInput';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/months', icon: Calendar, label: 'Monthly View' },
-  { to: '/add', icon: PlusCircle, label: 'Add Expense' },
+interface NavGroup {
+  label: string;
+  icon: React.ElementType;
+  items: { to: string; icon: React.ElementType; label: string }[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'Expenses',
+    icon: Receipt,
+    items: [
+      { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/months', icon: Calendar, label: 'Monthly View' },
+      { to: '/add', icon: PlusCircle, label: 'Add Expense' },
+    ],
+  },
+  {
+    label: 'Habit Tracking',
+    icon: Target,
+    items: [
+      { to: '/habits', icon: BarChart3, label: 'Dashboard' },
+      { to: '/habits/add', icon: CheckSquare, label: 'Add Habit' },
+    ],
+  },
 ];
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<string[]>(['Expenses', 'Habit Tracking']);
   const location = useLocation();
 
   const closeSidebar = () => setSidebarOpen(false);
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) =>
+      prev.includes(label) ? prev.filter((g) => g !== label) : [...prev, label]
+    );
+  };
+
+  // Find current page label for header
+  const getCurrentPageLabel = () => {
+    for (const group of navGroups) {
+      const item = group.items.find((i) => i.to === location.pathname);
+      if (item) return `${group.label} - ${item.label}`;
+    }
+    return 'Dashboard';
+  };
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -74,24 +120,46 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={closeSidebar}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
-                    isActive
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )
-                }
+          <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+            {navGroups.map((group) => (
+              <Collapsible
+                key={group.label}
+                open={openGroups.includes(group.label)}
+                onOpenChange={() => toggleGroup(group.label)}
               >
-                <item.icon className="w-5 h-5" />
-                {item.label}
-              </NavLink>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <group.icon className="w-5 h-5" />
+                    {group.label}
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 transition-transform duration-200",
+                      openGroups.includes(group.label) && "rotate-180"
+                    )}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-4 mt-1 space-y-1">
+                  {group.items.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={closeSidebar}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                          isActive
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        )
+                      }
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
             ))}
           </nav>
 
@@ -102,7 +170,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <span className="text-xs font-medium text-sidebar-foreground/80">Quick Stats</span>
             </div>
             <p className="text-xs text-sidebar-foreground/60">
-              Track and manage your monthly expenses with ease.
+              Track and manage your expenses & habits.
             </p>
           </div>
         </div>
@@ -124,7 +192,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </Button>
               <div className="hidden sm:block">
                 <h2 className="font-display font-semibold text-lg">
-                  {navItems.find((item) => item.to === location.pathname)?.label || 'Dashboard'}
+                  {getCurrentPageLabel()}
                 </h2>
               </div>
             </div>
