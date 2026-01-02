@@ -293,11 +293,18 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                         </th>
                       );
                     })}
+                    <th className="sticky right-0 bg-background z-10 px-3 py-2 text-center min-w-[60px] border-l border-border">
+                      <div className="text-[10px] uppercase text-muted-foreground font-medium">Rate</div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {habits.map((habit) => {
                     const IconComponent = iconMap[habit.icon] || Target;
+                    const completedInMonth = daysInMonth.filter((day) =>
+                      habit.completedDates.includes(format(day, 'yyyy-MM-dd'))
+                    ).length;
+                    const monthlyRate = Math.round((completedInMonth / daysInMonth.length) * 100);
                     return (
                       <tr key={habit.id} className="border-b border-border last:border-b-0 group">
                         <td className="sticky left-0 bg-background z-10 px-3 py-3">
@@ -370,9 +377,20 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                             </td>
                           );
                         })}
+                        <td className="sticky right-0 bg-background z-10 px-3 py-2 text-center border-l border-border">
+                          <span
+                            className="text-sm font-semibold"
+                            style={{ color: monthlyRate >= 50 ? habit.color : undefined }}
+                          >
+                            {monthlyRate}%
+                          </span>
+                        </td>
                       </tr>
                     );
                   })}
+                          const isCompleted = habit.completedDates.includes(dateStr);
+                          const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
+
                 </tbody>
               </table>
             </div>
