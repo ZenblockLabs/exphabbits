@@ -112,12 +112,92 @@ const decemberData: MonthData = {
   petrol: [600, 750, 400],
 };
 
+const januaryData: MonthData = {
+  snacks: [100, 40, 399, 26, 100, 80, 180, 50, 100, 97, 93, 120, 70],
+  food: [160, 140, 70],
+  travellingCharge: [15, 50, 65, 128, 163, 120, 200, 148, 120],
+  otherExpenses: [
+    { desc: "Expense", amount: 3010 },
+    { desc: "Amma", amount: 8000 },
+    { desc: "Amrith noni", amount: 400 },
+    { desc: "Amrith noni", amount: 682 },
+    { desc: "Grocery", amount: 3810 },
+  ],
+  selfExpense: [
+    { desc: "Sunscreen", amount: 199 },
+    { desc: "Jio Prime", amount: 29 },
+    { desc: "PG Rent", amount: 6000 },
+    { desc: "Movie", amount: 180 },
+    { desc: "Computer glass", amount: 415 },
+    { desc: "Sandal soap", amount: 117 },
+    { desc: "Snooker", amount: 60 },
+    { desc: "Chicken", amount: 250 },
+    { desc: "Pant", amount: 1150 },
+    { desc: "Hangers", amount: 238 },
+    { desc: "Peter cake", amount: 114 },
+  ],
+  petrol: [120, 60, 527, 60, 410, 60, 120, 320],
+};
+
+const februaryData: MonthData = {
+  snacks: [210, 60, 186, 46, 320, 35, 36, 118, 90, 200, 305, 70],
+  food: [260, 310, 470],
+  travellingCharge: [100, 100, 35],
+  otherExpenses: [
+    { desc: "Chicken", amount: 330 },
+    { desc: "Sanga", amount: 1000 },
+  ],
+  selfExpense: [
+    { desc: "Acefluency", amount: 1021 },
+    { desc: "Movie", amount: 300 },
+    { desc: "Hotel", amount: 700 },
+    { desc: "PG Rent", amount: 6000 },
+    { desc: "Perfume", amount: 333 },
+    { desc: "Xerox", amount: 26 },
+    { desc: "Movie", amount: 200 },
+    { desc: "Tablet", amount: 15 },
+    { desc: "Football", amount: 138 },
+  ],
+  petrol: [180, 300, 390, 290, 250],
+};
+
+const marchData: MonthData = {
+  snacks: [120, 150, 36, 160, 80, 80, 14, 220, 287, 30, 220, 60],
+  food: [360],
+  travellingCharge: [100, 114, 280],
+  otherExpenses: [
+    { desc: "Jio Hotstar", amount: 299 },
+    { desc: "Ammi anniversary cake", amount: 480 },
+    { desc: "RO drink", amount: 236 },
+    { desc: "Good night", amount: 124 },
+    { desc: "Amma Sanga", amount: 800 },
+    { desc: "Sunscreen", amount: 470 },
+    { desc: "Sunscreen", amount: 150 },
+    { desc: "Bike service", amount: 1450 },
+    { desc: "Mart", amount: 61 },
+    { desc: "Amma Ugadi", amount: 700 },
+  ],
+  selfExpense: [
+    { desc: "Shoe pant Ajio", amount: 3542 },
+    { desc: "Cable", amount: 189 },
+    { desc: "PG Rent", amount: 6000 },
+    { desc: "Shirt", amount: 700 },
+    { desc: "B-chocolate", amount: 100 },
+    { desc: "Shots", amount: 199 },
+    { desc: "Shampoo", amount: 10 },
+    { desc: "Case & D+", amount: 80 },
+    { desc: "Rare plate", amount: 300 },
+    { desc: "Pool", amount: 80 },
+  ],
+  petrol: [340, 90, 150, 90, 190, 50],
+};
+
 export const initialExpenseData: ExpenseData = {
   2026: createEmptyYear(),
   2025: {
-    January: createEmptyMonth(),
-    February: createEmptyMonth(),
-    March: createEmptyMonth(),
+    January: { ...januaryData },
+    February: { ...februaryData },
+    March: { ...marchData },
     April: createEmptyMonth(),
     May: createEmptyMonth(),
     June: createEmptyMonth(),

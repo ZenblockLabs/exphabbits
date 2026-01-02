@@ -1,4 +1,4 @@
-// ExpenseContext - v2 - provides expense data and budget management
+// ExpenseContext - v3 - provides expense data and budget management
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ExpenseData, YearData, MonthData, initialExpenseData, createEmptyYear, CATEGORIES } from '@/data/expenseData';
 
