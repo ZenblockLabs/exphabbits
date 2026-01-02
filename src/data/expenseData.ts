@@ -412,6 +412,161 @@ const decemberData: MonthData = {
   petrol: [710, 510, 510, 1020],
 };
 
+// 2024 Data
+const september2024Data: MonthData = {
+  snacks: [30, 30, 166], // tea, pani puri, BBQ
+  food: [120, 200, 1840], // nati style Veg Biryani, chicken nuggets, GET Dinner party
+  travellingCharge: [50, 75], // Bus charge, Pass
+  otherExpenses: [
+    { desc: "Shampoos", amount: 10 },
+    { desc: "curd", amount: 10 },
+    { desc: "Garage", amount: 10 },
+    { desc: "brush", amount: 20 },
+    { desc: "knif", amount: 20 },
+    { desc: "Tablet", amount: 20 },
+    { desc: "pain killer Tablet", amount: 50 },
+    { desc: "Harn", amount: 60 },
+    { desc: "Coconut", amount: 90 },
+    { desc: "fruits", amount: 100 },
+    { desc: "nice road", amount: 100 },
+    { desc: "ear wax", amount: 107 },
+    { desc: "serivce", amount: 200 },
+    { desc: "Rohith", amount: 200 },
+    { desc: "police", amount: 200 },
+    { desc: "Cake Suresh", amount: 219 },
+    { desc: "Oil glass flipkart", amount: 232 },
+    { desc: "grocery", amount: 240 },
+    { desc: "Bella Vita", amount: 279 },
+    { desc: "Slipper Stand", amount: 300 },
+    { desc: "Rohith", amount: 400 },
+    { desc: "Oil", amount: 400 },
+    { desc: "Condiments", amount: 435 },
+    { desc: "Suresh watch gift", amount: 591 },
+    { desc: "Amma", amount: 1200 },
+    { desc: "Rice", amount: 1500 },
+    { desc: "Ganesh(Tamate)", amount: 3000 },
+    { desc: "Sanga", amount: 5660 },
+  ],
+  selfExpense: [
+    { desc: "dinner", amount: 50 },
+    { desc: "tempered glass", amount: 80 },
+    { desc: "cake", amount: 95 },
+    { desc: "cake", amount: 200 },
+    { desc: "Bakery", amount: 410 },
+    { desc: "muscle gainer", amount: 428 },
+    { desc: "speaker", amount: 639 },
+    { desc: "Mouse", amount: 650 },
+    { desc: "dress", amount: 875 },
+    { desc: "Gas stove", amount: 1003 },
+    { desc: "ajio dress", amount: 1088 },
+    { desc: "hair cutting", amount: 150 },
+    { desc: "LM-Dress", amount: 1877 },
+    { desc: "vivo display", amount: 2000 },
+    { desc: "SSD & RAM", amount: 3300 },
+    { desc: "PG", amount: 6000 },
+    { desc: "Samsung display", amount: 6300 },
+  ],
+  petrol: [140, 180, 160, 300, 370, 160, 180, 190, 329, 300, 460, 432],
+};
+
+const october2024Data: MonthData = {
+  snacks: [70, 135, 140, 338], // juice, Tea corner, Juice with pups, Tea treat
+  food: [60, 232, 238, 240, 360, 2020], // dinner, lunch, dinner, pizza with coke, Amish Home party, Myside party
+  travellingCharge: [25, 35, 35, 107, 130, 356], // pass, Bus charge x2, Auto charge, Bus charge
+  otherExpenses: [
+    { desc: "Gobi", amount: 35 },
+    { desc: "pan beda", amount: 40 },
+    { desc: "Parking", amount: 40 },
+    { desc: "Condiments", amount: 60 },
+    { desc: "Pooja", amount: 70 },
+    { desc: "corn", amount: 70 },
+    { desc: "pass", amount: 70 },
+    { desc: "Locker and milk", amount: 100 },
+    { desc: "Bike washing", amount: 100 },
+    { desc: "labour charge", amount: 100 },
+    { desc: "Petrol cap", amount: 110 },
+    { desc: "Self switch", amount: 120 },
+    { desc: "Bakery", amount: 180 },
+    { desc: "LuLu mall", amount: 225 },
+    { desc: "Rice", amount: 376 },
+    { desc: "Phone holder", amount: 380 },
+    { desc: "Appa", amount: 500 },
+    { desc: "Mantralaya", amount: 600 },
+  ],
+  selfExpense: [
+    { desc: "football", amount: 350 },
+    { desc: "Go karting", amount: 550 },
+    { desc: "Mic", amount: 890 },
+    { desc: "Kurta", amount: 1214 },
+    { desc: "Spigen power bank", amount: 1999 },
+    { desc: "Brand shirts", amount: 3000 },
+    { desc: "Nov T-shirt", amount: 500 },
+    { desc: "PG", amount: 6000 },
+  ],
+  petrol: [460, 140, 370, 100, 510, 460, 400],
+};
+
+const november2024Data: MonthData = {
+  snacks: [50, 170], // Softy, Bhagira movie
+  food: [200, 810, 3175], // pizza, Lunch, Food
+  travellingCharge: [60, 356], // Auto, Bus charge
+  otherExpenses: [
+    { desc: "Paring charge", amount: 30 },
+    { desc: "Garage", amount: 40 },
+    { desc: "Jumki", amount: 50 },
+    { desc: "Rice Road", amount: 60 },
+    { desc: "Ajji Tablet", amount: 70 },
+    { desc: "Egg", amount: 95 },
+    { desc: "Codiments", amount: 165 },
+    { desc: "Ash Gourd", amount: 330 },
+    { desc: "ajyanna gift", amount: 500 },
+    { desc: "Movie", amount: 500 },
+    { desc: "Harshith-gift", amount: 1300 },
+    { desc: "Amma chain", amount: 9000 },
+  ],
+  selfExpense: [
+    { desc: "Slipper", amount: 250 },
+    { desc: "Dress", amount: 4700 },
+    { desc: "PG", amount: 6000 },
+  ],
+  petrol: [180, 360, 190, 493, 120],
+};
+
+const december2024Data: MonthData = {
+  snacks: [227, 1373], // zepto, snacks
+  food: [5028], // Food
+  travellingCharge: [152], // Bus charge
+  otherExpenses: [
+    { desc: "Shampoo", amount: 10 },
+    { desc: "milk", amount: 26 },
+    { desc: "nice road", amount: 60 },
+    { desc: "cake", amount: 113 },
+    { desc: "ISKON", amount: 150 },
+    { desc: "Bakery", amount: 350 },
+    { desc: "movie", amount: 350 },
+    { desc: "Amma", amount: 400 },
+    { desc: "Service", amount: 440 },
+    { desc: "Drinks", amount: 500 },
+    { desc: "books", amount: 550 },
+    { desc: "bday sweets", amount: 560 },
+    { desc: "movie", amount: 600 },
+    { desc: "mobile repair", amount: 1000 },
+    { desc: "wifi", amount: 1000 },
+    { desc: "Amma sanga", amount: 4535 },
+  ],
+  selfExpense: [
+    { desc: "cutting", amount: 250 },
+    { desc: "Jio recharge", amount: 799 },
+    { desc: "sweartshirt", amount: 848 },
+    { desc: "chutya", amount: 900 },
+    { desc: "cloth", amount: 1800 },
+    { desc: "F Gear", amount: 2220 },
+    { desc: "PG", amount: 6000 },
+    { desc: "Monitor", amount: 8400 },
+  ],
+  petrol: [496, 160, 210, 120, 220, 240, 460, 170, 240, 260, 190],
+};
+
 export const initialExpenseData: ExpenseData = {
   2026: createEmptyYear(),
   2025: {
@@ -427,6 +582,20 @@ export const initialExpenseData: ExpenseData = {
     October: { ...octoberData },
     November: { ...novemberData },
     December: { ...decemberData },
+  },
+  2024: {
+    January: createEmptyMonth(),
+    February: createEmptyMonth(),
+    March: createEmptyMonth(),
+    April: createEmptyMonth(),
+    May: createEmptyMonth(),
+    June: createEmptyMonth(),
+    July: createEmptyMonth(),
+    August: createEmptyMonth(),
+    September: { ...september2024Data },
+    October: { ...october2024Data },
+    November: { ...november2024Data },
+    December: { ...december2024Data },
   },
 };
 
