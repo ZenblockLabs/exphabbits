@@ -1,4 +1,4 @@
-// Main App component - v3 - root of the application
+// Main App component - v4 - root of the application with provider context
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
