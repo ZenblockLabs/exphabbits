@@ -1,4 +1,4 @@
-// Main App component - v7 - with settings page
+// Main App component - v8 - with recurring expenses
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,10 +7,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { ExpenseProvider } from "@/contexts/ExpenseContext";
 import { HabitProvider } from "@/contexts/HabitContext";
+import { RecurringExpenseProvider } from "@/contexts/RecurringExpenseContext";
 import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
 import MonthlyView from "./pages/MonthlyView";
 import AddEditExpense from "./pages/AddEditExpense";
+import RecurringExpenses from "./pages/RecurringExpenses";
 import HabitsDashboard from "./pages/HabitsDashboard";
 import AddHabit from "./pages/AddHabit";
 import Challenge21Days from "./pages/Challenge21Days";
@@ -25,8 +27,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <TooltipProvider>
-          <BrowserRouter>
-            <ExpenseProvider>
+        <BrowserRouter>
+          <ExpenseProvider>
+            <RecurringExpenseProvider>
               <HabitProvider>
                 <Toaster />
                 <Sonner />
@@ -37,6 +40,7 @@ function App() {
                     <Route path="/months" element={<MonthlyView />} />
                     <Route path="/add" element={<AddEditExpense />} />
                     <Route path="/edit/:year/:month" element={<AddEditExpense />} />
+                    <Route path="/recurring" element={<RecurringExpenses />} />
                     
                     {/* Habit routes */}
                     <Route path="/habits" element={<HabitsDashboard />} />
@@ -53,8 +57,9 @@ function App() {
                   </Routes>
                 </Layout>
               </HabitProvider>
-            </ExpenseProvider>
-          </BrowserRouter>
+            </RecurringExpenseProvider>
+          </ExpenseProvider>
+        </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
