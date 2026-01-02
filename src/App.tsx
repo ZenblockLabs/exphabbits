@@ -1,4 +1,4 @@
-// Main App component - v6 - with theme support
+// Main App component - v7 - with settings page
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +13,7 @@ import MonthlyView from "./pages/MonthlyView";
 import AddEditExpense from "./pages/AddEditExpense";
 import HabitsDashboard from "./pages/HabitsDashboard";
 import AddHabit from "./pages/AddHabit";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,9 @@ function App() {
                     {/* Habit routes */}
                     <Route path="/habits" element={<HabitsDashboard />} />
                     <Route path="/habits/add" element={<AddHabit />} />
+                    
+                    {/* Settings */}
+                    <Route path="/settings" element={<Settings />} />
                     
                     <Route path="*" element={<NotFound />} />
                   </Routes>
