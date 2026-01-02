@@ -1,7 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ExpenseData, YearData, MonthData, initialExpenseData, createEmptyYear } from '@/data/expenseData';
+import { ExpenseData, YearData, MonthData, initialExpenseData, createEmptyYear, CATEGORIES } from '@/data/expenseData';
 
 const currentYear = new Date().getFullYear();
+
+type CategoryKey = keyof typeof CATEGORIES;
+
+export interface YearBudgets {
+  [category: string]: number;
+}
+
+export interface BudgetData {
+  [year: number]: YearBudgets;
+}
 
 interface ExpenseContextType {
   expenses: ExpenseData;
@@ -12,11 +22,14 @@ interface ExpenseContextType {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   availableYears: number[];
+  budgets: BudgetData;
+  updateBudget: (year: number, category: CategoryKey, amount: number) => void;
 }
 
 const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'expense-tracker-data';
+const BUDGET_STORAGE_KEY = 'expense-tracker-budgets';
 
 export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [expenses, setExpenses] = useState<ExpenseData>(() => {
@@ -24,7 +37,6 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // Migration: Check if old format (month-based) and convert to year-based
         if (parsed && typeof parsed === 'object' && !parsed[currentYear] && parsed['January']) {
           return { [currentYear]: parsed };
         }
@@ -35,6 +47,18 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
     return initialExpenseData;
   });
+
+  const [budgets, setBudgets] = useState<BudgetData>(() => {
+    const stored = localStorage.getItem(BUDGET_STORAGE_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  });
   
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +66,10 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
   }, [expenses]);
+
+  useEffect(() => {
+    localStorage.setItem(BUDGET_STORAGE_KEY, JSON.stringify(budgets));
+  }, [budgets]);
 
   const getYearData = (year?: number): YearData => {
     const targetYear = year ?? selectedYear;
@@ -58,7 +86,16 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     }));
   };
 
-  // Get all years that have data
+  const updateBudget = (year: number, category: CategoryKey, amount: number) => {
+    setBudgets((prev) => ({
+      ...prev,
+      [year]: {
+        ...(prev[year] || {}),
+        [category]: amount,
+      },
+    }));
+  };
+
   const availableYears = Object.keys(expenses).map(Number).sort((a, b) => b - a);
 
   return (
@@ -71,6 +108,8 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       searchTerm, 
       setSearchTerm,
       availableYears,
+      budgets,
+      updateBudget,
     }}>
       {children}
     </ExpenseContext.Provider>
