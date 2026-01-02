@@ -387,7 +387,7 @@ const RecurringExpenses: React.FC = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md top-[35%]">
           <DialogHeader>
             <DialogTitle>
               {editingExpense ? 'Edit Recurring Expense' : 'Add Recurring Expense'}
