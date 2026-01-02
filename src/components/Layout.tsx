@@ -315,7 +315,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Track and manage your expenses & habits.
               </p>
             </div>
-          )} */ */}
+          {/* */}
         </div>
       </aside>
 
