@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { format, subDays } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
 import {
   Target,
   Flame,
@@ -15,6 +15,8 @@ import {
   Star,
   Heart,
   Zap,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useHabits } from '@/contexts/HabitContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -193,150 +195,190 @@ const HabitsDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Habits List */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">Your Habits</h2>
-        
-        {habits.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Target className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground">No habits yet. Start by adding one!</p>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {habits.map((habit, index) => {
-              const IconComponent = iconMap[habit.icon] || Target;
-              const completionRate = getCompletionRate(habit.id, 7);
-              const isCompletedToday = habit.completedDates.includes(today);
+      {/* Habits Calendar Grid */}
+      <HabitsCalendarGrid 
+        habits={habits}
+        toggleHabitCompletion={toggleHabitCompletion}
+        deleteHabit={deleteHabit}
+        iconMap={iconMap}
+      />
+    </div>
+  );
+};
 
-              return (
-                <motion.div
-                  key={habit.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="overflow-hidden">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        {/* Icon & Toggle */}
-                        <button
-                          onClick={() => toggleHabitCompletion(habit.id, today)}
-                          className="flex-shrink-0 mt-1"
+interface HabitsCalendarGridProps {
+  habits: any[];
+  toggleHabitCompletion: (habitId: string, date: string) => void;
+  deleteHabit: (id: string) => void;
+  iconMap: Record<string, React.ElementType>;
+}
+
+const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
+  habits,
+  toggleHabitCompletion,
+  deleteHabit,
+  iconMap,
+}) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  const goToPreviousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const goToNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-foreground">Your Habits</h2>
+
+      {habits.length === 0 ? (
+        <Card className="p-8 text-center">
+          <Target className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+          <p className="text-muted-foreground">No habits yet. Start by adding one!</p>
+        </Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            {/* Month Navigation */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={goToPreviousMonth}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <h3 className="text-base font-semibold text-foreground">
+                {format(currentMonth, 'MMMM yyyy')}
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={goToNextMonth}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="sticky left-0 bg-background z-10 w-28 px-3 py-2 text-left">
+                      <span className="sr-only">Habit</span>
+                    </th>
+                    {daysInMonth.map((day) => {
+                      const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                      return (
+                        <th
+                          key={day.toISOString()}
+                          className={`px-1 py-2 text-center min-w-[36px] ${
+                            isToday ? 'bg-primary/10' : ''
+                          }`}
                         >
+                          <div className="text-[10px] uppercase text-muted-foreground font-medium">
+                            {format(day, 'EEE').slice(0, 2)}
+                          </div>
                           <div
-                            className="p-2 rounded-lg transition-all duration-200"
-                            style={{
-                              backgroundColor: isCompletedToday
-                                ? habit.color
-                                : `${habit.color}20`,
-                            }}
+                            className={`text-sm font-medium ${
+                              isToday ? 'text-primary' : 'text-foreground'
+                            }`}
                           >
-                            {isCompletedToday ? (
-                              <CheckCircle2 className="h-5 w-5 text-white" />
-                            ) : (
+                            {format(day, 'd')}
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {habits.map((habit) => {
+                    const IconComponent = iconMap[habit.icon] || Target;
+                    return (
+                      <tr key={habit.id} className="border-b border-border last:border-b-0 group">
+                        <td className="sticky left-0 bg-background z-10 px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="p-1.5 rounded-md flex-shrink-0"
+                              style={{ backgroundColor: `${habit.color}20` }}
+                            >
                               <IconComponent
-                                className="h-5 w-5"
+                                className="h-4 w-4"
                                 style={{ color: habit.color }}
                               />
-                            )}
-                          </div>
-                        </button>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3
-                              className={`font-medium ${
-                                isCompletedToday
-                                  ? 'line-through text-muted-foreground'
-                                  : 'text-foreground'
-                              }`}
-                            >
-                              {habit.name}
-                            </h3>
-                            <Badge variant="secondary" className="text-xs">
-                              {habit.frequency}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-3">
-                            {habit.description}
-                          </p>
-
-                          {/* Weekly Progress */}
-                          <div className="flex items-center gap-1">
-                            {last7Days.map((day) => {
-                              const isCompleted = habit.completedDates.includes(day.date);
-                              return (
-                                <button
-                                  key={day.date}
-                                  onClick={() =>
-                                    toggleHabitCompletion(habit.id, day.date)
-                                  }
-                                  className="flex flex-col items-center gap-1 p-1 rounded hover:bg-muted/50 transition-colors"
-                                >
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {day.label}
-                                  </span>
-                                  {isCompleted ? (
-                                    <CheckCircle2
-                                      className="h-5 w-5"
-                                      style={{ color: habit.color }}
-                                    />
-                                  ) : (
-                                    <Circle className="h-5 w-5 text-muted-foreground/30" />
-                                  )}
-                                </button>
-                              );
-                            })}
-                            <div className="ml-2 pl-2 border-l border-border">
-                              <span className="text-sm font-medium text-foreground">
-                                {completionRate}%
-                              </span>
-                              <p className="text-[10px] text-muted-foreground">7-day</p>
                             </div>
+                            <span className="text-sm font-medium text-foreground truncate max-w-[80px]" title={habit.name}>
+                              {habit.name.length > 10 ? `${habit.name.slice(0, 10)}...` : habit.name}
+                            </span>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive ml-auto"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Habit</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{habit.name}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteHabit(habit.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
-                        </div>
+                        </td>
+                        {daysInMonth.map((day) => {
+                          const dateStr = format(day, 'yyyy-MM-dd');
+                          const isCompleted = habit.completedDates.includes(dateStr);
+                          const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
 
-                        {/* Delete */}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-muted-foreground hover:text-destructive"
+                          return (
+                            <td
+                              key={day.toISOString()}
+                              className={`px-1 py-2 text-center ${isToday ? 'bg-primary/5' : ''}`}
                             >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Habit</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete "{habit.name}"? This
-                                action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteHabit(habit.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              <button
+                                onClick={() => toggleHabitCompletion(habit.id, dateStr)}
+                                className="mx-auto flex items-center justify-center h-6 w-6 rounded-full transition-all hover:scale-110"
                               >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                                {isCompleted ? (
+                                  <CheckCircle2
+                                    className="h-5 w-5"
+                                    style={{ color: habit.color }}
+                                  />
+                                ) : (
+                                  <Circle className="h-5 w-5 text-muted-foreground/30 hover:text-muted-foreground/50" />
+                                )}
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
