@@ -21,17 +21,27 @@ export interface ExpenseData {
 }
 
 export const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ] as const;
 
 export const CATEGORIES = {
-  snacks: { label: 'Snacks', color: 'snacks', icon: '🍿' },
-  food: { label: 'Food', color: 'food', icon: '🍽️' },
-  travellingCharge: { label: 'Travelling', color: 'travel', icon: '🚌' },
-  otherExpenses: { label: 'Other Expenses', color: 'other', icon: '📦' },
-  selfExpense: { label: 'Self Expense', color: 'self', icon: '🏠' },
-  petrol: { label: 'Petrol', color: 'petrol', icon: '⛽' },
+  snacks: { label: "Snacks", color: "snacks", icon: "🍿" },
+  food: { label: "Food", color: "food", icon: "🍽️" },
+  travellingCharge: { label: "Travelling", color: "travel", icon: "🚌" },
+  otherExpenses: { label: "Other Expenses", color: "other", icon: "📦" },
+  selfExpense: { label: "Self Expense", color: "self", icon: "🏠" },
+  petrol: { label: "Petrol", color: "petrol", icon: "⛽" },
 } as const;
 
 export const createEmptyMonth = (): MonthData => ({
@@ -45,7 +55,7 @@ export const createEmptyMonth = (): MonthData => ({
 
 export const createEmptyYear = (): YearData => {
   const yearData: YearData = {};
-  MONTHS.forEach(month => {
+  MONTHS.forEach((month) => {
     yearData[month] = createEmptyMonth();
   });
   return yearData;
@@ -55,7 +65,7 @@ const currentYear = new Date().getFullYear();
 
 export const initialExpenseData: ExpenseData = {
   [currentYear]: createEmptyYear(),
-  2025: {
+  2024: {
     January: createEmptyMonth(),
     February: createEmptyMonth(),
     March: createEmptyMonth(),
@@ -120,7 +130,7 @@ export const initialExpenseData: ExpenseData = {
 
 export const calculateCategoryTotal = (data: number[] | ExpenseItem[]): number => {
   if (data.length === 0) return 0;
-  if (typeof data[0] === 'number') {
+  if (typeof data[0] === "number") {
     return (data as number[]).reduce((sum, val) => sum + val, 0);
   }
   return (data as ExpenseItem[]).reduce((sum, item) => sum + item.amount, 0);
