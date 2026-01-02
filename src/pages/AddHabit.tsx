@@ -11,13 +11,16 @@ import {
   Heart,
   Zap,
   Check,
+  Bell,
 } from 'lucide-react';
-import { useHabits } from '@/contexts/HabitContext';
+import { useHabits, HABIT_CATEGORIES, HabitCategory, HabitReminder } from '@/contexts/HabitContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -49,15 +52,46 @@ const colorOptions = [
   { value: 'hsl(328, 85%, 46%)', label: 'Pink' },
 ];
 
+const DAYS_OF_WEEK = [
+  { value: 0, label: 'Sun' },
+  { value: 1, label: 'Mon' },
+  { value: 2, label: 'Tue' },
+  { value: 3, label: 'Wed' },
+  { value: 4, label: 'Thu' },
+  { value: 5, label: 'Fri' },
+  { value: 6, label: 'Sat' },
+];
+
 const AddHabit: React.FC = () => {
   const navigate = useNavigate();
-  const { addHabit } = useHabits();
+  const { addHabit, requestNotificationPermission, notificationPermission } = useHabits();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [category, setCategory] = useState<HabitCategory>('other');
   const [selectedIcon, setSelectedIcon] = useState('Target');
   const [selectedColor, setSelectedColor] = useState('hsl(142, 76%, 36%)');
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderTime, setReminderTime] = useState('09:00');
+  const [reminderDays, setReminderDays] = useState<number[]>([1, 2, 3, 4, 5]);
+
+  const handleEnableReminder = async (checked: boolean) => {
+    if (checked && notificationPermission !== 'granted') {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        toast.error('Please allow notifications to enable reminders');
+        return;
+      }
+    }
+    setReminderEnabled(checked);
+  };
+
+  const toggleReminderDay = (day: number) => {
+    setReminderDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +101,18 @@ const AddHabit: React.FC = () => {
       return;
     }
 
+    const reminder: HabitReminder | undefined = reminderEnabled
+      ? { enabled: true, time: reminderTime, days: reminderDays }
+      : undefined;
+
     addHabit({
       name: name.trim(),
       description: description.trim(),
       frequency,
+      category,
       icon: selectedIcon,
       color: selectedColor,
+      reminder,
     });
 
     toast.success('Habit created successfully!');
@@ -122,6 +162,22 @@ const AddHabit: React.FC = () => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as HabitCategory)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {HABIT_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="frequency">Frequency</Label>
               <Select value={frequency} onValueChange={(v) => setFrequency(v as any)}>
                 <SelectTrigger>
@@ -134,6 +190,69 @@ const AddHabit: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Reminder Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Reminder Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Enable Reminders</Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified when it's time for your habit
+                </p>
+              </div>
+              <Switch
+                checked={reminderEnabled}
+                onCheckedChange={handleEnableReminder}
+              />
+            </div>
+
+            {reminderEnabled && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-4 pt-4 border-t border-border"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="time">Reminder Time</Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={reminderTime}
+                    onChange={(e) => setReminderTime(e.target.value)}
+                    className="w-32"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Remind on</Label>
+                  <div className="flex gap-2 flex-wrap">
+                    {DAYS_OF_WEEK.map((day) => (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleReminderDay(day.value)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          reminderDays.includes(day.value)
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </CardContent>
         </Card>
 
