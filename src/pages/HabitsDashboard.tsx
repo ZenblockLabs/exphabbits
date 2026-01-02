@@ -22,6 +22,7 @@ import { useHabits } from '@/contexts/HabitContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -378,12 +379,21 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                           );
                         })}
                         <td className="sticky right-0 bg-background z-10 px-3 py-2 text-center border-l border-border">
-                          <span
-                            className="text-sm font-semibold"
-                            style={{ color: monthlyRate >= 50 ? habit.color : undefined }}
-                          >
-                            {monthlyRate}%
-                          </span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  className="text-sm font-semibold cursor-default"
+                                  style={{ color: monthlyRate >= 50 ? habit.color : undefined }}
+                                >
+                                  {monthlyRate}%
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{completedInMonth} of {daysInMonth.length} days completed</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </td>
                       </tr>
                     );
