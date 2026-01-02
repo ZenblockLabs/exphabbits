@@ -12,26 +12,26 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ExpenseProvider>
-        <Toaster />
-        <Sonner />
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
         <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/months" element={<MonthlyView />} />
-              <Route path="/add" element={<AddEditExpense />} />
-              <Route path="/edit/:year/:month" element={<AddEditExpense />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
+          <ExpenseProvider>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/months" element={<MonthlyView />} />
+                <Route path="/add" element={<AddEditExpense />} />
+                <Route path="/edit/:year/:month" element={<AddEditExpense />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Layout>
+          </ExpenseProvider>
         </BrowserRouter>
-      </ExpenseProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
