@@ -13,6 +13,7 @@ import MonthlyView from "./pages/MonthlyView";
 import AddEditExpense from "./pages/AddEditExpense";
 import HabitsDashboard from "./pages/HabitsDashboard";
 import AddHabit from "./pages/AddHabit";
+import Challenge21Days from "./pages/Challenge21Days";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,7 @@ function App() {
                     {/* Habit routes */}
                     <Route path="/habits" element={<HabitsDashboard />} />
                     <Route path="/habits/add" element={<AddHabit />} />
+                    <Route path="/habits/challenge" element={<Challenge21Days />} />
                     
                     {/* Settings */}
                     <Route path="/settings" element={<Settings />} />
