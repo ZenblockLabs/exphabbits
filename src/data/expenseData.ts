@@ -332,6 +332,7 @@ const octoberData: MonthData = {
   ],
   selfExpense: [
     { desc: "Spotify", amount: 69 },
+    { desc: "PG Rent", amount: 6000 },
     { desc: "Crepe bandage", amount: 200 },
     { desc: "Movie", amount: 419 },
     { desc: "Bath sponge", amount: 30 },
@@ -703,23 +704,23 @@ export const getMonthlyTotals = (yearData: YearData) => {
 
 export const getTopExpenses = (
   yearData: YearData,
-  type: 'all' | 'self' | 'other' | 'petrol',
-  count: number = 5
+  type: "all" | "self" | "other" | "petrol",
+  count: number = 5,
 ): TopExpenseItem[] => {
   const expenses: TopExpenseItem[] = [];
 
   Object.values(yearData).forEach((month) => {
-    if (type === 'all' || type === 'self') {
+    if (type === "all" || type === "self") {
       month.selfExpense.forEach((item) => {
         expenses.push({ desc: item.desc, amount: item.amount });
       });
     }
-    if (type === 'all' || type === 'other') {
+    if (type === "all" || type === "other") {
       month.otherExpenses.forEach((item) => {
         expenses.push({ desc: item.desc, amount: item.amount });
       });
     }
-    if (type === 'all' || type === 'petrol') {
+    if (type === "all" || type === "petrol") {
       month.petrol.forEach((amount, index) => {
         expenses.push({ desc: `Petrol #${index + 1}`, amount });
       });
