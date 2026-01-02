@@ -494,6 +494,57 @@ export const getCategoryBreakdown = (yearData: YearData) => {
   return breakdown;
 };
 
+export interface TopExpenseItem {
+  desc: string;
+  amount: number;
+  category: string;
+}
+
+export const getTopExpenses = (
+  yearData: YearData,
+  type: 'all' | 'self' | 'other' | 'petrol',
+  limit: number = 5
+): TopExpenseItem[] => {
+  const items: TopExpenseItem[] = [];
+
+  Object.values(yearData).forEach((month) => {
+    if (type === 'all' || type === 'self') {
+      month.selfExpense.forEach((item) => {
+        items.push({ desc: item.desc, amount: item.amount, category: 'Self' });
+      });
+    }
+    
+    if (type === 'all' || type === 'other') {
+      month.otherExpenses.forEach((item) => {
+        items.push({ desc: item.desc, amount: item.amount, category: 'Other' });
+      });
+      // Add snacks, food, travelling as grouped items
+      const snacksTotal = calculateCategoryTotal(month.snacks);
+      if (snacksTotal > 0 && (type === 'all' || type === 'other')) {
+        items.push({ desc: 'Snacks', amount: snacksTotal, category: 'Snacks' });
+      }
+      const foodTotal = calculateCategoryTotal(month.food);
+      if (foodTotal > 0 && (type === 'all' || type === 'other')) {
+        items.push({ desc: 'Food', amount: foodTotal, category: 'Food' });
+      }
+      const travelTotal = calculateCategoryTotal(month.travellingCharge);
+      if (travelTotal > 0 && (type === 'all' || type === 'other')) {
+        items.push({ desc: 'Travelling', amount: travelTotal, category: 'Travel' });
+      }
+    }
+    
+    if (type === 'all' || type === 'petrol') {
+      const petrolTotal = calculateCategoryTotal(month.petrol);
+      if (petrolTotal > 0) {
+        items.push({ desc: 'Petrol', amount: petrolTotal, category: 'Petrol' });
+      }
+    }
+  });
+
+  // Sort by amount descending and take top items
+  return items.sort((a, b) => b.amount - a.amount).slice(0, limit);
+};
+
 export const getMonthlyTotals = (yearData: YearData) => {
   return MONTHS.map((month) => ({
     month,
