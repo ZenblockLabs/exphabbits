@@ -18,7 +18,9 @@ import {
   CheckSquare,
   BarChart3,
   Settings,
-  Flame
+  Flame,
+  User,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -61,6 +63,13 @@ const navGroups: NavGroup[] = [
       { to: '/habits', icon: BarChart3, label: 'Dashboard' },
       { to: '/habits/add', icon: CheckSquare, label: 'Add Habit' },
       { to: '/habits/challenge', icon: Flame, label: '21 Days Challenge' },
+    ],
+  },
+  {
+    label: 'Personal',
+    icon: User,
+    items: [
+      { to: '/notebook', icon: BookOpen, label: 'Notebook' },
     ],
   },
 ];
