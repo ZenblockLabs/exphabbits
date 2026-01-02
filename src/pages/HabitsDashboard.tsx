@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
 import {
@@ -36,6 +36,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import StreakLeaderboard from '@/components/StreakLeaderboard';
+import { useMilestoneSound } from '@/hooks/useMilestoneSound';
 
 const iconMap: Record<string, React.ElementType> = {
   Dumbbell,
@@ -196,6 +198,9 @@ const HabitsDashboard: React.FC = () => {
           </p>
         </CardContent>
       </Card>
+
+      {/* Streak Leaderboard */}
+      <StreakLeaderboard habits={habits} iconMap={iconMap} />
 
       {/* Habits Calendar Grid */}
       <HabitsCalendarGrid 
@@ -468,7 +473,7 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
   );
 };
 
-// Streak Cell Component with Confetti
+// Streak Cell Component with Confetti and Sound
 interface StreakCellProps {
   habitStreak: number;
   habitColor: string;
@@ -476,21 +481,23 @@ interface StreakCellProps {
 
 const StreakCell: React.FC<StreakCellProps> = ({ habitStreak, habitColor }) => {
   const [showConfetti, setShowConfetti] = useState(false);
-  const [prevStreak, setPrevStreak] = useState(habitStreak);
+  const prevStreakRef = useRef(habitStreak);
+  const { playMilestoneSound } = useMilestoneSound();
   
   const milestones = [7, 30, 100];
   
   useEffect(() => {
     // Check if we just hit a milestone
-    if (habitStreak !== prevStreak) {
-      const justHitMilestone = milestones.some(m => habitStreak === m && prevStreak < m);
-      if (justHitMilestone) {
+    if (habitStreak !== prevStreakRef.current) {
+      const hitMilestone = milestones.find(m => habitStreak === m && prevStreakRef.current < m);
+      if (hitMilestone) {
         setShowConfetti(true);
+        playMilestoneSound(hitMilestone);
         setTimeout(() => setShowConfetti(false), 3000);
       }
-      setPrevStreak(habitStreak);
+      prevStreakRef.current = habitStreak;
     }
-  }, [habitStreak, prevStreak]);
+  }, [habitStreak, playMilestoneSound]);
 
   const getStreakStyle = () => {
     if (habitStreak >= 100) {
