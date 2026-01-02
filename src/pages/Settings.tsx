@@ -84,7 +84,7 @@ const Settings: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 w-full">
       <div>
         <h1 className="text-2xl font-display font-bold">Settings</h1>
         <p className="text-muted-foreground">Customize your app experience</p>
