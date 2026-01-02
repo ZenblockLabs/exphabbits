@@ -388,9 +388,6 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                       </tr>
                     );
                   })}
-                          const isCompleted = habit.completedDates.includes(dateStr);
-                          const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
-
                 </tbody>
               </table>
             </div>
