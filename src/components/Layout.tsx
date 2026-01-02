@@ -1,7 +1,8 @@
-// Layout component - v4 - with settings
+// Layout component - v5 - with collapse and theme
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from 'next-themes';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -11,13 +12,20 @@ import {
   Wallet,
   TrendingUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Receipt,
   Target,
   CheckSquare,
   BarChart3,
   Settings,
   Eye,
-  EyeOff
+  EyeOff,
+  Sun,
+  Moon,
+  Monitor,
+  PanelLeftClose,
+  PanelLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -37,6 +45,11 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -68,33 +81,33 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-// Get all menu item keys for visibility settings
-const getAllMenuItems = () => {
-  const items: { key: string; label: string; group: string }[] = [];
-  navGroups.forEach(group => {
-    group.items.forEach(item => {
-      items.push({ key: item.to, label: item.label, group: group.label });
-    });
-  });
-  return items;
-};
-
-const STORAGE_KEY = 'sidebar-visibility-settings';
+const VISIBILITY_STORAGE_KEY = 'sidebar-visibility-settings';
+const COLLAPSED_STORAGE_KEY = 'sidebar-collapsed';
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem(COLLAPSED_STORAGE_KEY);
+    return saved === 'true';
+  });
   const [openGroups, setOpenGroups] = useState<string[]>(['Expenses', 'Habit Tracking']);
   const [hiddenItems, setHiddenItems] = useState<string[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(VISIBILITY_STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
 
   // Save visibility settings to localStorage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(hiddenItems));
+    localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(hiddenItems));
   }, [hiddenItems]);
+
+  // Save collapsed state to localStorage
+  useEffect(() => {
+    localStorage.setItem(COLLAPSED_STORAGE_KEY, String(collapsed));
+  }, [collapsed]);
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -125,6 +138,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return 'Dashboard';
   };
 
+  const themeOptions = [
+    { value: 'light', label: 'Light', icon: Sun },
+    { value: 'dark', label: 'Dark', icon: Moon },
+    { value: 'system', label: 'System', icon: Monitor },
+  ];
+
   return (
     <div className="min-h-screen flex bg-background">
       {/* Overlay for mobile */}
@@ -143,36 +162,86 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-50 h-screen w-64 flex-shrink-0 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+          "fixed lg:sticky top-0 left-0 z-50 h-screen flex-shrink-0 transform transition-all duration-300 ease-in-out lg:translate-x-0",
+          collapsed ? "w-16" : "w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="h-full flex flex-col bg-sidebar text-sidebar-foreground">
+        <div className="h-full flex flex-col bg-sidebar text-sidebar-foreground relative">
+          {/* Collapse toggle button - desktop only */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex absolute -right-3 top-6 z-10 h-6 w-6 rounded-full border border-sidebar-border bg-sidebar hover:bg-sidebar-accent"
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            {collapsed ? (
+              <ChevronRight className="h-3 w-3" />
+            ) : (
+              <ChevronLeft className="h-3 w-3" />
+            )}
+          </Button>
+
           {/* Logo */}
-          <div className="p-6 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
+          <div className={cn("p-4 flex items-center gap-3", collapsed && "justify-center")}>
+            <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center flex-shrink-0">
               <Wallet className="w-5 h-5 text-sidebar-primary-foreground" />
             </div>
-            <div>
-              <h1 className="font-display font-bold text-lg text-sidebar-foreground">ExpenseFlow</h1>
-              <p className="text-xs text-sidebar-foreground/60">Track your spending</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto lg:hidden text-sidebar-foreground hover:bg-sidebar-accent"
-              onClick={closeSidebar}
-            >
-              <X className="w-5 h-5" />
-            </Button>
+            {!collapsed && (
+              <div className="overflow-hidden">
+                <h1 className="font-display font-bold text-lg text-sidebar-foreground truncate">ExpenseFlow</h1>
+                <p className="text-xs text-sidebar-foreground/60 truncate">Track your spending</p>
+              </div>
+            )}
+            {!collapsed && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto lg:hidden text-sidebar-foreground hover:bg-sidebar-accent"
+                onClick={closeSidebar}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            )}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+          <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
             {navGroups.map((group) => {
               const visibleItems = getVisibleItems(group);
               if (visibleItems.length === 0) return null;
               
+              if (collapsed) {
+                // Collapsed: show icons only with tooltips
+                return (
+                  <div key={group.label} className="space-y-1">
+                    {visibleItems.map((item) => (
+                      <Tooltip key={item.to}>
+                        <TooltipTrigger asChild>
+                          <NavLink
+                            to={item.to}
+                            onClick={closeSidebar}
+                            className={({ isActive }) =>
+                              cn(
+                                "flex items-center justify-center w-full p-3 rounded-lg transition-all duration-200",
+                                isActive
+                                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                              )
+                            }
+                          >
+                            <item.icon className="w-5 h-5" />
+                          </NavLink>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          {item.label}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                );
+              }
+
               return (
                 <Collapsible
                   key={group.label}
@@ -217,74 +286,142 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </nav>
 
           {/* Settings */}
-          <div className="px-4 py-2">
+          <div className="px-2 py-2">
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
               <DialogTrigger asChild>
-                <button className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200">
-                  <Settings className="w-5 h-5" />
-                  Settings
-                </button>
+                {collapsed ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="flex items-center justify-center w-full p-3 rounded-lg text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200">
+                        <Settings className="w-5 h-5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Settings</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <button className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200">
+                    <Settings className="w-5 h-5" />
+                    Settings
+                  </button>
+                )}
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Settings className="w-5 h-5" />
-                    Sidebar Settings
+                    Settings
                   </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <p className="text-sm text-muted-foreground">
-                    Toggle which menu items are visible in the sidebar.
-                  </p>
-                  {navGroups.map((group, groupIndex) => (
-                    <div key={group.label}>
-                      {groupIndex > 0 && <Separator className="my-4" />}
-                      <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <group.icon className="w-4 h-4" />
-                        {group.label}
-                      </h4>
-                      <div className="space-y-3">
-                        {group.items.map((item) => (
-                          <div key={item.to} className="flex items-center justify-between">
-                            <Label 
-                              htmlFor={`visibility-${item.to}`}
-                              className="flex items-center gap-2 text-sm cursor-pointer"
-                            >
-                              <item.icon className="w-4 h-4 text-muted-foreground" />
-                              {item.label}
-                            </Label>
-                            <div className="flex items-center gap-2">
-                              {isItemVisible(item.to) ? (
-                                <Eye className="w-4 h-4 text-muted-foreground" />
-                              ) : (
-                                <EyeOff className="w-4 h-4 text-muted-foreground" />
-                              )}
-                              <Switch
-                                id={`visibility-${item.to}`}
-                                checked={isItemVisible(item.to)}
-                                onCheckedChange={() => toggleItemVisibility(item.to)}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                <div className="space-y-6 py-4">
+                  {/* Theme Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <Sun className="w-4 h-4" />
+                      Theme
+                    </h4>
+                    <div className="flex gap-2">
+                      {themeOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => setTheme(option.value)}
+                          className={cn(
+                            "flex-1 flex flex-col items-center gap-2 p-3 rounded-lg border transition-all duration-200",
+                            theme === option.value
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border hover:border-primary/50 hover:bg-muted"
+                          )}
+                        >
+                          <option.icon className="w-5 h-5" />
+                          <span className="text-xs font-medium">{option.label}</span>
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+
+                  <Separator />
+
+                  {/* Sidebar Collapse Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <PanelLeft className="w-4 h-4" />
+                      Sidebar
+                    </h4>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="collapse-sidebar" className="flex items-center gap-2 text-sm cursor-pointer">
+                        {collapsed ? (
+                          <PanelLeftClose className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <PanelLeft className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        Collapse sidebar
+                      </Label>
+                      <Switch
+                        id="collapse-sidebar"
+                        checked={collapsed}
+                        onCheckedChange={setCollapsed}
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Menu Visibility Section */}
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Toggle which menu items are visible in the sidebar.
+                    </p>
+                    {navGroups.map((group, groupIndex) => (
+                      <div key={group.label}>
+                        {groupIndex > 0 && <Separator className="my-4" />}
+                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <group.icon className="w-4 h-4" />
+                          {group.label}
+                        </h4>
+                        <div className="space-y-3">
+                          {group.items.map((item) => (
+                            <div key={item.to} className="flex items-center justify-between">
+                              <Label 
+                                htmlFor={`visibility-${item.to}`}
+                                className="flex items-center gap-2 text-sm cursor-pointer"
+                              >
+                                <item.icon className="w-4 h-4 text-muted-foreground" />
+                                {item.label}
+                              </Label>
+                              <div className="flex items-center gap-2">
+                                {isItemVisible(item.to) ? (
+                                  <Eye className="w-4 h-4 text-muted-foreground" />
+                                ) : (
+                                  <EyeOff className="w-4 h-4 text-muted-foreground" />
+                                )}
+                                <Switch
+                                  id={`visibility-${item.to}`}
+                                  checked={isItemVisible(item.to)}
+                                  onCheckedChange={() => toggleItemVisibility(item.to)}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
 
-          {/* Footer Stats */}
-          <div className="p-4 m-4 rounded-xl bg-sidebar-accent">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-sidebar-primary" />
-              <span className="text-xs font-medium text-sidebar-foreground/80">Quick Stats</span>
+          {/* Footer Stats - hide when collapsed */}
+          {!collapsed && (
+            <div className="p-4 m-2 rounded-xl bg-sidebar-accent">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-sidebar-primary" />
+                <span className="text-xs font-medium text-sidebar-foreground/80">Quick Stats</span>
+              </div>
+              <p className="text-xs text-sidebar-foreground/60">
+                Track and manage your expenses & habits.
+              </p>
             </div>
-            <p className="text-xs text-sidebar-foreground/60">
-              Track and manage your expenses & habits.
-            </p>
-          </div>
+          )}
         </div>
       </aside>
 
