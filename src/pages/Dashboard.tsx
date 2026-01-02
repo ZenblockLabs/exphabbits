@@ -5,6 +5,7 @@ import { useExpenses } from '@/contexts/ExpenseContext';
 import { calculateYearTotals } from '@/data/expenseData';
 import { StatCard } from '@/components/StatCard';
 import { CategoryPieChart, MonthlyBarChart } from '@/components/ExpenseCharts';
+import { BudgetProgress } from '@/components/BudgetProgress';
 import {
   Select,
   SelectContent,
@@ -96,10 +97,11 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts and Budget */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <CategoryPieChart />
         <MonthlyBarChart />
+        <BudgetProgress />
       </div>
     </div>
   );
