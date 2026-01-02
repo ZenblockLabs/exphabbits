@@ -2,7 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, Fuel, DollarSign, ChevronLeft, ChevronRight, Keyboard } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
-import { calculateYearTotals, MONTHS } from '@/data/expenseData';
+import { calculateYearTotals, MONTHS, getTopExpenses } from '@/data/expenseData';
 import { StatCard } from '@/components/StatCard';
 import { CategoryPieChart, MonthlyBarChart } from '@/components/ExpenseCharts';
 import { BudgetProgress } from '@/components/BudgetProgress';
@@ -26,6 +26,12 @@ const Dashboard: React.FC = () => {
   const { getFilteredYearData, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, availableYears } = useExpenses();
   const yearData = getFilteredYearData();
   const totals = calculateYearTotals(yearData);
+  
+  // Get top expenses for each stat card
+  const topExpensesAll = getTopExpenses(yearData, 'all', 5);
+  const topExpensesSelf = getTopExpenses(yearData, 'self', 5);
+  const topExpensesOther = getTopExpenses(yearData, 'other', 5);
+  const topExpensesPetrol = getTopExpenses(yearData, 'petrol', 5);
 
   // Generate years for dropdown (5 years back and forward from current)
   const currentYear = new Date().getFullYear();
@@ -180,6 +186,7 @@ const Dashboard: React.FC = () => {
           variant="primary"
           subtitle={selectedMonth === 'All' ? `All expenses in ${selectedYear}` : `Expenses in ${selectedMonth} ${selectedYear}`}
           delay={0}
+          topExpenses={topExpensesAll}
         />
         <StatCard
           title="Self Expenses"
@@ -188,6 +195,7 @@ const Dashboard: React.FC = () => {
           variant="default"
           subtitle="Rent, subscriptions, etc."
           delay={0.1}
+          topExpenses={topExpensesSelf}
         />
         <StatCard
           title="Other Expenses"
@@ -196,6 +204,7 @@ const Dashboard: React.FC = () => {
           variant="accent"
           subtitle="Daily spending"
           delay={0.2}
+          topExpenses={topExpensesOther}
         />
         <StatCard
           title="Petrol"
@@ -204,6 +213,7 @@ const Dashboard: React.FC = () => {
           variant="default"
           subtitle="Fuel expenses"
           delay={0.3}
+          topExpenses={topExpensesPetrol}
         />
       </div>
 

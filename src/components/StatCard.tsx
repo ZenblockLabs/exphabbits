@@ -2,6 +2,12 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import { TopExpenseItem } from '@/data/expenseData';
 
 interface StatCardProps {
   title: string;
@@ -10,7 +16,16 @@ interface StatCardProps {
   variant?: 'primary' | 'accent' | 'default';
   subtitle?: string;
   delay?: number;
+  topExpenses?: TopExpenseItem[];
 }
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 export const StatCard: React.FC<StatCardProps> = ({
   title,
@@ -19,22 +34,15 @@ export const StatCard: React.FC<StatCardProps> = ({
   variant = 'default',
   subtitle,
   delay = 0,
+  topExpenses,
 }) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  return (
+  const cardContent = (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
       className={cn(
-        "stat-card",
+        "stat-card cursor-pointer",
         variant === 'primary' && "stat-card-primary",
         variant === 'accent' && "stat-card-accent"
       )}
@@ -66,5 +74,42 @@ export const StatCard: React.FC<StatCardProps> = ({
         </div>
       </div>
     </motion.div>
+  );
+
+  if (!topExpenses || topExpenses.length === 0) {
+    return cardContent;
+  }
+
+  return (
+    <HoverCard openDelay={200}>
+      <HoverCardTrigger asChild>
+        {cardContent}
+      </HoverCardTrigger>
+      <HoverCardContent className="w-72" side="bottom" align="start">
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-foreground">Top Expenses</h4>
+          <div className="space-y-2">
+            {topExpenses.map((item, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between py-1.5 px-2 rounded-md bg-muted/50"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground w-4">
+                    #{index + 1}
+                  </span>
+                  <span className="text-sm text-foreground truncate max-w-[120px]">
+                    {item.desc}
+                  </span>
+                </div>
+                <span className="text-sm font-medium text-foreground">
+                  {formatCurrency(item.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 };
