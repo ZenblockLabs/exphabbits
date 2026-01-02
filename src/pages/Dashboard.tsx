@@ -47,6 +47,18 @@ const Dashboard: React.FC = () => {
     setSelectedMonth(monthOptions[newIndex]);
   }, [currentMonthIndex, monthOptions, setSelectedMonth]);
 
+  const handlePrevYear = useCallback(() => {
+    const currentIndex = allYears.indexOf(selectedYear);
+    const newIndex = currentIndex < allYears.length - 1 ? currentIndex + 1 : 0;
+    setSelectedYear(allYears[newIndex]);
+  }, [allYears, selectedYear, setSelectedYear]);
+
+  const handleNextYear = useCallback(() => {
+    const currentIndex = allYears.indexOf(selectedYear);
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : allYears.length - 1;
+    setSelectedYear(allYears[newIndex]);
+  }, [allYears, selectedYear, setSelectedYear]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -59,12 +71,18 @@ const Dashboard: React.FC = () => {
         handlePrevMonth();
       } else if (e.key === 'ArrowRight') {
         handleNextMonth();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        handleNextYear();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        handlePrevYear();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlePrevMonth, handleNextMonth]);
+  }, [handlePrevMonth, handleNextMonth, handlePrevYear, handleNextYear]);
 
   // Swipe handlers for mobile
   const swipeHandlers = useSwipe({
@@ -119,11 +137,17 @@ const Dashboard: React.FC = () => {
                     <Keyboard className="h-3.5 w-3.5 text-muted-foreground/50 hidden sm:block" />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="flex items-center gap-2">
-                  <span>Use</span>
-                  <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded border">←</kbd>
-                  <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded border">→</kbd>
-                  <span>arrow keys to navigate</span>
+                <TooltipContent side="bottom" className="flex flex-col gap-1 text-xs">
+                  <div className="flex items-center gap-2">
+                    <kbd className="px-1.5 py-0.5 bg-muted rounded border">←</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-muted rounded border">→</kbd>
+                    <span>Month</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <kbd className="px-1.5 py-0.5 bg-muted rounded border">↑</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-muted rounded border">↓</kbd>
+                    <span>Year</span>
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
