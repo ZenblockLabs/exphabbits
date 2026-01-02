@@ -303,7 +303,7 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
               <table className={`w-full ${viewMode === 'monthly' ? 'min-w-[800px]' : ''}`}>
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="sticky left-0 bg-background z-10 w-28 px-3 py-2 text-left">
+                    <th className="sticky left-0 bg-background z-10 min-w-[160px] px-3 py-2 text-left">
                       <span className="sr-only">Habit</span>
                     </th>
                     {displayDays.map((day) => {
@@ -342,7 +342,7 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                     const periodRate = Math.round((completedInPeriod / displayDays.length) * 100);
                     return (
                       <tr key={habit.id} className="border-b border-border last:border-b-0 group">
-                        <td className="sticky left-0 bg-background z-10 px-3 py-3">
+                        <td className="sticky left-0 bg-background z-10 px-3 py-3 min-w-[160px]">
                           <div className="flex items-center gap-2">
                             <div
                               className="p-1.5 rounded-md flex-shrink-0"
@@ -353,8 +353,8 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                                 style={{ color: habit.color }}
                               />
                             </div>
-                            <span className="text-sm font-medium text-foreground truncate max-w-[80px]" title={habit.name}>
-                              {habit.name.length > 10 ? `${habit.name.slice(0, 10)}...` : habit.name}
+                            <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                              {habit.name}
                             </span>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
