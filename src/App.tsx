@@ -1,4 +1,4 @@
-// Main App component - v4 - with habit tracking routes
+// Main App component - v5 - with habit tracking routes
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
