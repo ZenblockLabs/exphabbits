@@ -221,17 +221,43 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
   iconMap,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly');
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  // Weekly view: last 7 days
+  const last7Days = Array.from({ length: 7 }, (_, i) => subDays(new Date(), 6 - i));
+
+  const displayDays = viewMode === 'monthly' ? daysInMonth : last7Days;
 
   const goToPreviousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const goToNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-foreground">Your Habits</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">Your Habits</h2>
+        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+          <Button
+            variant={viewMode === 'weekly' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('weekly')}
+            className="h-7 px-3 text-xs"
+          >
+            Weekly
+          </Button>
+          <Button
+            variant={viewMode === 'monthly' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('monthly')}
+            className="h-7 px-3 text-xs"
+          >
+            Monthly
+          </Button>
+        </div>
+      </div>
 
       {habits.length === 0 ? (
         <Card className="p-8 text-center">
@@ -241,38 +267,46 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
       ) : (
         <Card className="overflow-hidden">
           <CardContent className="p-0">
-            {/* Month Navigation */}
+            {/* Navigation Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={goToPreviousMonth}
-                className="h-8 w-8"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <h3 className="text-base font-semibold text-foreground">
-                {format(currentMonth, 'MMMM yyyy')}
-              </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={goToNextMonth}
-                className="h-8 w-8"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              {viewMode === 'monthly' ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={goToPreviousMonth}
+                    className="h-8 w-8"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <h3 className="text-base font-semibold text-foreground">
+                    {format(currentMonth, 'MMMM yyyy')}
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={goToNextMonth}
+                    className="h-8 w-8"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <h3 className="text-base font-semibold text-foreground w-full text-center">
+                  Last 7 Days
+                </h3>
+              )}
             </div>
 
             {/* Calendar Grid */}
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
+              <table className={`w-full ${viewMode === 'monthly' ? 'min-w-[800px]' : ''}`}>
                 <thead>
                   <tr className="border-b border-border">
                     <th className="sticky left-0 bg-background z-10 w-28 px-3 py-2 text-left">
                       <span className="sr-only">Habit</span>
                     </th>
-                    {daysInMonth.map((day) => {
+                    {displayDays.map((day) => {
                       const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
                       return (
                         <th
@@ -302,10 +336,10 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                 <tbody>
                   {habits.map((habit) => {
                     const IconComponent = iconMap[habit.icon] || Target;
-                    const completedInMonth = daysInMonth.filter((day) =>
+                    const completedInPeriod = displayDays.filter((day) =>
                       habit.completedDates.includes(format(day, 'yyyy-MM-dd'))
                     ).length;
-                    const monthlyRate = Math.round((completedInMonth / daysInMonth.length) * 100);
+                    const periodRate = Math.round((completedInPeriod / displayDays.length) * 100);
                     return (
                       <tr key={habit.id} className="border-b border-border last:border-b-0 group">
                         <td className="sticky left-0 bg-background z-10 px-3 py-3">
@@ -352,7 +386,7 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                             </AlertDialog>
                           </div>
                         </td>
-                        {daysInMonth.map((day) => {
+                        {displayDays.map((day) => {
                           const dateStr = format(day, 'yyyy-MM-dd');
                           const isCompleted = habit.completedDates.includes(dateStr);
                           const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
@@ -384,13 +418,13 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                               <TooltipTrigger asChild>
                                 <span
                                   className="text-sm font-semibold cursor-default"
-                                  style={{ color: monthlyRate >= 50 ? habit.color : undefined }}
+                                  style={{ color: periodRate >= 50 ? habit.color : undefined }}
                                 >
-                                  {monthlyRate}%
+                                  {periodRate}%
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{completedInMonth} of {daysInMonth.length} days completed</p>
+                                <p>{completedInPeriod} of {displayDays.length} days completed</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
