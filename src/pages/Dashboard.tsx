@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, Fuel, DollarSign } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
-import { calculateYearTotals } from '@/data/expenseData';
+import { calculateYearTotals, MONTHS } from '@/data/expenseData';
 import { StatCard } from '@/components/StatCard';
 import { CategoryPieChart, MonthlyBarChart } from '@/components/ExpenseCharts';
 import { BudgetProgress } from '@/components/BudgetProgress';
@@ -15,8 +15,8 @@ import {
 } from '@/components/ui/select';
 
 const Dashboard: React.FC = () => {
-  const { getYearData, selectedYear, setSelectedYear, availableYears } = useExpenses();
-  const yearData = getYearData();
+  const { getFilteredYearData, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, availableYears } = useExpenses();
+  const yearData = getFilteredYearData();
   const totals = calculateYearTotals(yearData);
 
   // Generate years for dropdown (5 years back and forward from current)
@@ -42,20 +42,38 @@ const Dashboard: React.FC = () => {
               Here's an overview of your expenses. Track, analyze, and manage your spending habits effectively.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Year:</span>
-            <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(Number(val))}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {allYears.map((year) => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Month:</span>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Months</SelectItem>
+                  {MONTHS.map((month) => (
+                    <SelectItem key={month} value={month}>
+                      {month.slice(0, 3)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Year:</span>
+              <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(Number(val))}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {allYears.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -64,11 +82,11 @@ const Dashboard: React.FC = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <StatCard
-          title="Year Total"
+          title={selectedMonth === 'All' ? 'Year Total' : `${selectedMonth} Total`}
           value={totals.yearTotal}
           icon={DollarSign}
           variant="primary"
-          subtitle={`All expenses in ${selectedYear}`}
+          subtitle={selectedMonth === 'All' ? `All expenses in ${selectedYear}` : `Expenses in ${selectedMonth} ${selectedYear}`}
           delay={0}
         />
         <StatCard

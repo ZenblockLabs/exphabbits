@@ -1,4 +1,4 @@
-// ExpenseContext - v4 - provides expense data and budget management
+// ExpenseContext - v5 - provides expense data and budget management with month filter
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ExpenseData, YearData, MonthData, initialExpenseData, createEmptyYear, CATEGORIES } from '@/data/expenseData';
 
@@ -18,7 +18,10 @@ interface ExpenseContextType {
   expenses: ExpenseData;
   selectedYear: number;
   setSelectedYear: (year: number) => void;
+  selectedMonth: string;
+  setSelectedMonth: (month: string) => void;
   getYearData: (year?: number) => YearData;
+  getFilteredYearData: (year?: number) => YearData;
   updateMonth: (year: number, month: string, data: MonthData) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
@@ -67,6 +70,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   });
   
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -80,6 +84,20 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   const getYearData = (year?: number): YearData => {
     const targetYear = year ?? selectedYear;
     return expenses[targetYear] || createEmptyYear();
+  };
+
+  const getFilteredYearData = (year?: number): YearData => {
+    const targetYear = year ?? selectedYear;
+    const yearData = expenses[targetYear] || createEmptyYear();
+    
+    if (selectedMonth === 'All') {
+      return yearData;
+    }
+    
+    // Return only the selected month's data
+    const filteredData: YearData = {};
+    filteredData[selectedMonth] = yearData[selectedMonth] || createEmptyYear()[selectedMonth];
+    return filteredData;
   };
 
   const updateMonth = (year: number, month: string, data: MonthData) => {
@@ -109,7 +127,10 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       expenses, 
       selectedYear, 
       setSelectedYear,
+      selectedMonth,
+      setSelectedMonth,
       getYearData,
+      getFilteredYearData,
       updateMonth, 
       searchTerm, 
       setSearchTerm,
