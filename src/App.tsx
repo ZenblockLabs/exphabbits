@@ -14,6 +14,7 @@ import AddEditExpense from "./pages/AddEditExpense";
 import HabitsDashboard from "./pages/HabitsDashboard";
 import AddHabit from "./pages/AddHabit";
 import Challenge21Days from "./pages/Challenge21Days";
+import Notebook from "./pages/Notebook";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -41,6 +42,9 @@ function App() {
                     <Route path="/habits" element={<HabitsDashboard />} />
                     <Route path="/habits/add" element={<AddHabit />} />
                     <Route path="/habits/challenge" element={<Challenge21Days />} />
+                    
+                    {/* Personal */}
+                    <Route path="/notebook" element={<Notebook />} />
                     
                     {/* Settings */}
                     <Route path="/settings" element={<Settings />} />
