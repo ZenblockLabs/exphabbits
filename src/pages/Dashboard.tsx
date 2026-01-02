@@ -7,6 +7,7 @@ import { StatCard } from '@/components/StatCard';
 import { CategoryPieChart, MonthlyBarChart } from '@/components/ExpenseCharts';
 import { BudgetProgress } from '@/components/BudgetProgress';
 import { Button } from '@/components/ui/button';
+import { useSwipe } from '@/hooks/useSwipe';
 import {
   Select,
   SelectContent,
@@ -40,8 +41,14 @@ const Dashboard: React.FC = () => {
     setSelectedMonth(monthOptions[newIndex]);
   };
 
+  // Swipe handlers for mobile
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: handleNextMonth,
+    onSwipeRight: handlePrevMonth,
+  });
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 touch-pan-y" {...swipeHandlers}>
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0 }}
