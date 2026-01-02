@@ -42,9 +42,10 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       try {
         const parsed = JSON.parse(stored);
         if (parsed && typeof parsed === 'object') {
-          // Always use initialExpenseData for 2025 to ensure latest sample data
+          // Always use initialExpenseData for 2024, 2025, 2026 to ensure latest sample data
           return { 
             ...parsed, 
+            2024: initialExpenseData[2024],
             2025: initialExpenseData[2025],
             2026: initialExpenseData[2026] 
           };
