@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Fuel, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Wallet, TrendingUp, Fuel, DollarSign, ChevronLeft, ChevronRight, Keyboard } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { calculateYearTotals, MONTHS } from '@/data/expenseData';
 import { StatCard } from '@/components/StatCard';
@@ -8,6 +8,12 @@ import { CategoryPieChart, MonthlyBarChart } from '@/components/ExpenseCharts';
 import { BudgetProgress } from '@/components/BudgetProgress';
 import { Button } from '@/components/ui/button';
 import { useSwipe } from '@/hooks/useSwipe';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -84,30 +90,43 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Month:</span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={handlePrevMonth}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="w-16 text-center text-sm font-medium">
-                  {selectedMonth === 'All' ? 'All' : selectedMonth.slice(0, 3)}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={handleNextMonth}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Month:</span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={handlePrevMonth}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="w-16 text-center text-sm font-medium">
+                        {selectedMonth === 'All' ? 'All' : selectedMonth.slice(0, 3)}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={handleNextMonth}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Keyboard className="h-3.5 w-3.5 text-muted-foreground/50 hidden sm:block" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="flex items-center gap-2">
+                  <span>Use</span>
+                  <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded border">←</kbd>
+                  <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded border">→</kbd>
+                  <span>arrow keys to navigate</span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Year:</span>
               <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(Number(val))}>
