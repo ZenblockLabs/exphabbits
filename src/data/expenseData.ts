@@ -113,20 +113,7 @@ const decemberData: MonthData = {
 };
 
 export const initialExpenseData: ExpenseData = {
-  2026: {
-    January: createEmptyMonth(),
-    February: createEmptyMonth(),
-    March: createEmptyMonth(),
-    April: createEmptyMonth(),
-    May: createEmptyMonth(),
-    June: createEmptyMonth(),
-    July: createEmptyMonth(),
-    August: createEmptyMonth(),
-    September: createEmptyMonth(),
-    October: createEmptyMonth(),
-    November: { ...novemberData },
-    December: { ...decemberData },
-  },
+  2026: createEmptyYear(),
   2025: {
     January: createEmptyMonth(),
     February: createEmptyMonth(),
