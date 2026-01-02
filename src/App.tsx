@@ -1,4 +1,4 @@
-// Main App component - root of the application
+// Main App component - v2 - root of the application
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
