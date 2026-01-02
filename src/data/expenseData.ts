@@ -65,7 +65,7 @@ const currentYear = new Date().getFullYear();
 
 export const initialExpenseData: ExpenseData = {
   [currentYear]: createEmptyYear(),
-  2024: {
+  2025: {
     January: createEmptyMonth(),
     February: createEmptyMonth(),
     March: createEmptyMonth(),
