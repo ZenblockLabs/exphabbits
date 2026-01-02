@@ -18,7 +18,8 @@ import {
   CheckSquare,
   Flame,
   User,
-  BookOpen
+  BookOpen,
+  RefreshCw
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -37,6 +38,7 @@ const navGroups = [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
       { to: '/months', icon: Calendar, label: 'Monthly View' },
       { to: '/add', icon: PlusCircle, label: 'Add Expense' },
+      { to: '/recurring', icon: RefreshCw, label: 'Recurring' },
     ],
   },
   {
