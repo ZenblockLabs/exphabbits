@@ -38,10 +38,23 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed && typeof parsed === 'object' && !parsed[currentYear] && parsed['January']) {
-          return { [currentYear]: parsed };
+        if (parsed && typeof parsed === 'object') {
+          // Merge with initial data to ensure all years are present
+          const merged = { ...initialExpenseData, ...parsed };
+          // Also ensure 2025 and 2026 have their sample data if empty
+          if (!parsed[2025] || Object.values(parsed[2025]).every((m: any) => 
+            m.snacks?.length === 0 && m.food?.length === 0 && m.petrol?.length === 0
+          )) {
+            merged[2025] = initialExpenseData[2025];
+          }
+          if (!parsed[2026] || Object.values(parsed[2026]).every((m: any) => 
+            m.snacks?.length === 0 && m.food?.length === 0 && m.petrol?.length === 0
+          )) {
+            merged[2026] = initialExpenseData[2026];
+          }
+          return merged;
         }
-        return parsed;
+        return initialExpenseData;
       } catch {
         return initialExpenseData;
       }
