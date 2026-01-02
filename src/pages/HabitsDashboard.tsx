@@ -378,13 +378,35 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-500">
-                                      <Flame className="h-3 w-3" />
+                                    <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full ${
+                                      habitStreak >= 100 
+                                        ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-500 ring-1 ring-purple-500/30' 
+                                        : habitStreak >= 30 
+                                          ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-600 ring-1 ring-yellow-500/30' 
+                                          : habitStreak >= 7 
+                                            ? 'bg-blue-500/10 text-blue-500' 
+                                            : 'bg-orange-500/10 text-orange-500'
+                                    }`}>
+                                      {habitStreak >= 100 ? (
+                                        <Star className="h-3 w-3" />
+                                      ) : habitStreak >= 30 ? (
+                                        <Zap className="h-3 w-3" />
+                                      ) : (
+                                        <Flame className="h-3 w-3" />
+                                      )}
                                       <span className="text-xs font-semibold">{habitStreak}</span>
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>{habitStreak} day streak</p>
+                                    <p className="font-medium">
+                                      {habitStreak >= 100 
+                                        ? `🏆 Legendary! ${habitStreak} day streak` 
+                                        : habitStreak >= 30 
+                                          ? `⚡ On fire! ${habitStreak} day streak` 
+                                          : habitStreak >= 7 
+                                            ? `🔥 Great! ${habitStreak} day streak` 
+                                            : `${habitStreak} day streak`}
+                                    </p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
