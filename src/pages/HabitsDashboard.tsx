@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
 import {
@@ -17,6 +17,7 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
+  Trophy,
 } from 'lucide-react';
 import { useHabits } from '@/contexts/HabitContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -303,8 +304,14 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
               <table className={`w-full ${viewMode === 'monthly' ? 'min-w-[800px]' : ''}`}>
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="sticky left-0 bg-background z-10 min-w-[160px] px-3 py-2 text-left">
+                    <th className="sticky left-0 bg-background z-10 min-w-[140px] px-3 py-2 text-left">
                       <span className="sr-only">Habit</span>
+                    </th>
+                    <th className="bg-background px-2 py-2 text-center min-w-[70px] border-l border-border">
+                      <div className="text-[10px] uppercase text-muted-foreground font-medium flex items-center justify-center gap-1">
+                        <Flame className="h-3 w-3" />
+                        Streak
+                      </div>
                     </th>
                     {displayDays.map((day) => {
                       const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
@@ -360,7 +367,7 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                     
                     return (
                       <tr key={habit.id} className="border-b border-border last:border-b-0 group">
-                        <td className="sticky left-0 bg-background z-10 px-3 py-3 min-w-[200px]">
+                        <td className="sticky left-0 bg-background z-10 px-3 py-3 min-w-[140px]">
                           <div className="flex items-center gap-2">
                             <div
                               className="p-1.5 rounded-md flex-shrink-0"
@@ -374,43 +381,6 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                             <span className="text-sm font-medium text-foreground whitespace-nowrap">
                               {habit.name}
                             </span>
-                            {habitStreak > 0 && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full ${
-                                      habitStreak >= 100 
-                                        ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-500 ring-1 ring-purple-500/30' 
-                                        : habitStreak >= 30 
-                                          ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-600 ring-1 ring-yellow-500/30' 
-                                          : habitStreak >= 7 
-                                            ? 'bg-blue-500/10 text-blue-500' 
-                                            : 'bg-orange-500/10 text-orange-500'
-                                    }`}>
-                                      {habitStreak >= 100 ? (
-                                        <Star className="h-3 w-3" />
-                                      ) : habitStreak >= 30 ? (
-                                        <Zap className="h-3 w-3" />
-                                      ) : (
-                                        <Flame className="h-3 w-3" />
-                                      )}
-                                      <span className="text-xs font-semibold">{habitStreak}</span>
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="font-medium">
-                                      {habitStreak >= 100 
-                                        ? `🏆 Legendary! ${habitStreak} day streak` 
-                                        : habitStreak >= 30 
-                                          ? `⚡ On fire! ${habitStreak} day streak` 
-                                          : habitStreak >= 7 
-                                            ? `🔥 Great! ${habitStreak} day streak` 
-                                            : `${habitStreak} day streak`}
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
@@ -441,6 +411,7 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
                             </AlertDialog>
                           </div>
                         </td>
+                        <StreakCell habitStreak={habitStreak} habitColor={habit.color} />
                         {displayDays.map((day) => {
                           const dateStr = format(day, 'yyyy-MM-dd');
                           const isCompleted = habit.completedDates.includes(dateStr);
@@ -494,6 +465,109 @@ const HabitsCalendarGrid: React.FC<HabitsCalendarGridProps> = ({
         </Card>
       )}
     </div>
+  );
+};
+
+// Streak Cell Component with Confetti
+interface StreakCellProps {
+  habitStreak: number;
+  habitColor: string;
+}
+
+const StreakCell: React.FC<StreakCellProps> = ({ habitStreak, habitColor }) => {
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [prevStreak, setPrevStreak] = useState(habitStreak);
+  
+  const milestones = [7, 30, 100];
+  
+  useEffect(() => {
+    // Check if we just hit a milestone
+    if (habitStreak !== prevStreak) {
+      const justHitMilestone = milestones.some(m => habitStreak === m && prevStreak < m);
+      if (justHitMilestone) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
+      setPrevStreak(habitStreak);
+    }
+  }, [habitStreak, prevStreak]);
+
+  const getStreakStyle = () => {
+    if (habitStreak >= 100) {
+      return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30';
+    } else if (habitStreak >= 30) {
+      return 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-orange-500/30';
+    } else if (habitStreak >= 7) {
+      return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md shadow-blue-500/20';
+    } else if (habitStreak > 0) {
+      return 'bg-orange-500/20 text-orange-600';
+    }
+    return 'bg-muted text-muted-foreground';
+  };
+
+  const getStreakIcon = () => {
+    if (habitStreak >= 100) return <Trophy className="h-4 w-4" />;
+    if (habitStreak >= 30) return <Star className="h-4 w-4" />;
+    if (habitStreak >= 7) return <Zap className="h-4 w-4" />;
+    return <Flame className="h-4 w-4" />;
+  };
+
+  const getTooltipText = () => {
+    if (habitStreak >= 100) return `🏆 Legendary! ${habitStreak} day streak`;
+    if (habitStreak >= 30) return `⭐ Amazing! ${habitStreak} day streak`;
+    if (habitStreak >= 7) return `⚡ Great! ${habitStreak} day streak`;
+    if (habitStreak > 0) return `🔥 ${habitStreak} day streak`;
+    return 'No current streak';
+  };
+
+  return (
+    <td className="bg-background px-2 py-2 text-center border-l border-border relative">
+      {showConfetti && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 rounded-full"
+              style={{
+                backgroundColor: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'][i % 8],
+                left: `${50 + (Math.random() - 0.5) * 100}%`,
+                top: '50%',
+              }}
+              initial={{ y: 0, opacity: 1, scale: 1 }}
+              animate={{
+                y: [0, -60 - Math.random() * 40],
+                x: [(Math.random() - 0.5) * 60],
+                opacity: [1, 1, 0],
+                scale: [1, 1.2, 0.8],
+                rotate: [0, Math.random() * 360],
+              }}
+              transition={{
+                duration: 1.5 + Math.random() * 0.5,
+                ease: 'easeOut',
+                delay: Math.random() * 0.3,
+              }}
+            />
+          ))}
+        </div>
+      )}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <motion.div
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-bold cursor-default ${getStreakStyle()}`}
+              animate={showConfetti ? { scale: [1, 1.2, 1] } : {}}
+              transition={{ duration: 0.5 }}
+            >
+              {getStreakIcon()}
+              <span>{habitStreak}</span>
+            </motion.div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="font-medium">{getTooltipText()}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </td>
   );
 };
 
