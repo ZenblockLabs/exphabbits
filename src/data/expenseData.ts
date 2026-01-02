@@ -493,9 +493,42 @@ export const getCategoryBreakdown = (yearData: YearData) => {
   return breakdown;
 };
 
+export interface TopExpenseItem {
+  desc: string;
+  amount: number;
+}
+
 export const getMonthlyTotals = (yearData: YearData) => {
   return MONTHS.map((month) => ({
     month,
     total: yearData[month] ? calculateMonthTotal(yearData[month]) : 0,
   }));
+};
+
+export const getTopExpenses = (
+  yearData: YearData,
+  type: 'all' | 'self' | 'other' | 'petrol',
+  count: number = 5
+): TopExpenseItem[] => {
+  const expenses: TopExpenseItem[] = [];
+
+  Object.values(yearData).forEach((month) => {
+    if (type === 'all' || type === 'self') {
+      month.selfExpense.forEach((item) => {
+        expenses.push({ desc: item.desc, amount: item.amount });
+      });
+    }
+    if (type === 'all' || type === 'other') {
+      month.otherExpenses.forEach((item) => {
+        expenses.push({ desc: item.desc, amount: item.amount });
+      });
+    }
+    if (type === 'all' || type === 'petrol') {
+      month.petrol.forEach((amount, index) => {
+        expenses.push({ desc: `Petrol #${index + 1}`, amount });
+      });
+    }
+  });
+
+  return expenses.sort((a, b) => b.amount - a.amount).slice(0, count);
 };
