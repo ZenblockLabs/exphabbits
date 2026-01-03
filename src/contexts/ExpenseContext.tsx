@@ -1,7 +1,8 @@
-// ExpenseContext - v6 - provides expense data with database persistence
+// ExpenseContext - v7 - with user authentication
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ExpenseData, YearData, MonthData, createEmptyYear, CATEGORIES, MONTHS } from '@/data/expenseData';
+import { useAuth } from '@/contexts/AuthContext';
+import { ExpenseData, YearData, MonthData, createEmptyYear, CATEGORIES } from '@/data/expenseData';
 
 const currentYear = new Date().getFullYear();
 
@@ -35,6 +36,7 @@ interface ExpenseContextType {
 const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
 
 export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [expenses, setExpenses] = useState<ExpenseData>({});
   const [budgets, setBudgets] = useState<BudgetData>({});
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
@@ -42,9 +44,16 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch expenses from database
+  // Fetch expenses from database when user changes
   useEffect(() => {
+    if (!user) {
+      setExpenses({ [currentYear]: createEmptyYear() });
+      setIsLoading(false);
+      return;
+    }
+
     const fetchExpenses = async () => {
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('expenses')
@@ -52,7 +61,6 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
         
         if (error) throw error;
 
-        // Convert database rows to ExpenseData format
         const expenseData: ExpenseData = {};
         
         if (data && data.length > 0) {
@@ -66,7 +74,6 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
               expenseData[year] = createEmptyYear();
             }
 
-            // Type-safe assignment
             const monthData = expenseData[year][month];
             if (monthData) {
               (monthData as unknown as Record<string, typeof items>)[category] = items;
@@ -74,7 +81,6 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
           });
         }
 
-        // Ensure current year exists
         if (!expenseData[currentYear]) {
           expenseData[currentYear] = createEmptyYear();
         }
@@ -89,10 +95,15 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
 
     fetchExpenses();
-  }, []);
+  }, [user]);
 
-  // Fetch budgets from database
+  // Fetch budgets from database when user changes
   useEffect(() => {
+    if (!user) {
+      setBudgets({});
+      return;
+    }
+
     const fetchBudgets = async () => {
       try {
         const { data, error } = await supabase
@@ -119,7 +130,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
 
     fetchBudgets();
-  }, []);
+  }, [user]);
 
   const getYearData = (year?: number): YearData => {
     const targetYear = year ?? selectedYear;
@@ -140,6 +151,8 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const updateMonth = async (year: number, month: string, data: MonthData) => {
+    if (!user) return;
+
     // Update local state immediately
     setExpenses((prev) => ({
       ...prev,
@@ -156,7 +169,6 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       for (const category of categories) {
         const items = data[category];
         
-        // Check if record exists
         const { data: existing } = await supabase
           .from('expenses')
           .select('id')
@@ -166,16 +178,20 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
           .maybeSingle();
 
         if (existing) {
-          // Update existing record
           await supabase
             .from('expenses')
             .update({ items: items as unknown as null })
             .eq('id', existing.id);
         } else {
-          // Insert new record
           await supabase
             .from('expenses')
-            .insert({ year, month, category, items: items as unknown as null });
+            .insert({ 
+              year, 
+              month, 
+              category, 
+              items: items as unknown as null,
+              user_id: user.id 
+            });
         }
       }
     } catch (error) {
@@ -184,6 +200,8 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const updateBudget = async (year: number, category: CategoryKey, amount: number) => {
+    if (!user) return;
+
     // Update local state immediately
     setBudgets((prev) => ({
       ...prev,
@@ -210,7 +228,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       } else {
         await supabase
           .from('budgets')
-          .insert({ year, category, amount });
+          .insert({ year, category, amount, user_id: user.id });
       }
     } catch (error) {
       console.error('Error saving budget:', error);

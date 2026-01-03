@@ -1,6 +1,7 @@
-// HabitContext - manages habits with database persistence
+// HabitContext - v2 - with user authentication
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type HabitCategory = 'health' | 'productivity' | 'learning' | 'mindfulness' | 'fitness' | 'other';
 
@@ -49,6 +50,7 @@ interface HabitContextType {
 const HabitContext = createContext<HabitContextType | undefined>(undefined);
 
 export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<HabitCategory | 'all'>('all');
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | null>(null);
@@ -60,11 +62,17 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, []);
 
-  // Fetch habits and completions from database
+  // Fetch habits and completions from database when user changes
   useEffect(() => {
+    if (!user) {
+      setHabits([]);
+      setIsLoading(false);
+      return;
+    }
+
     const fetchHabits = async () => {
+      setIsLoading(true);
       try {
-        // Fetch habits
         const { data: habitsData, error: habitsError } = await supabase
           .from('habits')
           .select('*')
@@ -72,14 +80,12 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         
         if (habitsError) throw habitsError;
 
-        // Fetch all completions
         const { data: completionsData, error: completionsError } = await supabase
           .from('habit_completions')
           .select('*');
         
         if (completionsError) throw completionsError;
 
-        // Group completions by habit
         const completionsByHabit: Record<string, string[]> = {};
         if (completionsData) {
           completionsData.forEach((completion) => {
@@ -90,13 +96,12 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           });
         }
 
-        // Map to Habit interface
         if (habitsData) {
           const habits: Habit[] = habitsData.map((row) => ({
             id: row.id,
             name: row.name,
             description: row.description || '',
-            frequency: 'daily' as const, // Default to daily
+            frequency: 'daily' as const,
             category: row.category as HabitCategory,
             color: row.color,
             icon: row.icon,
@@ -118,7 +123,7 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
 
     fetchHabits();
-  }, []);
+  }, [user]);
 
   // Check and send notifications
   useEffect(() => {
@@ -160,6 +165,8 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const addHabit = async (habitData: Omit<Habit, 'id' | 'createdAt' | 'completedDates'>) => {
+    if (!user) return;
+
     try {
       const { data, error } = await supabase
         .from('habits')
@@ -171,6 +178,7 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           color: habitData.color,
           reminder_enabled: habitData.reminder?.enabled || false,
           reminder_time: habitData.reminder?.time || null,
+          user_id: user.id,
         })
         .select()
         .single();
@@ -202,14 +210,14 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'createdAt'>>) => {
-    // Update local state immediately
+    if (!user) return;
+
     setHabits(prev =>
       prev.map(habit =>
         habit.id === id ? { ...habit, ...updates } : habit
       )
     );
 
-    // Sync to database
     try {
       const dbUpdates: Record<string, unknown> = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
@@ -232,10 +240,10 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const deleteHabit = async (id: string) => {
-    // Update local state immediately
+    if (!user) return;
+
     setHabits(prev => prev.filter(h => h.id !== id));
 
-    // Sync to database (completions will cascade delete)
     try {
       await supabase
         .from('habits')
@@ -247,12 +255,13 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const toggleHabitCompletion = async (habitId: string, date: string) => {
+    if (!user) return;
+
     const habit = habits.find(h => h.id === habitId);
     if (!habit) return;
 
     const isCompleted = habit.completedDates.includes(date);
 
-    // Update local state immediately
     setHabits(prev =>
       prev.map(h => {
         if (h.id !== habitId) return h;
@@ -265,17 +274,14 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       })
     );
 
-    // Sync to database
     try {
       if (isCompleted) {
-        // Remove completion
         await supabase
           .from('habit_completions')
           .delete()
           .eq('habit_id', habitId)
           .eq('completed_date', date);
       } else {
-        // Add completion
         await supabase
           .from('habit_completions')
           .insert({

@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           id: string
           updated_at: string
+          user_id: string | null
           year: number
         }
         Insert: {
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string
           id?: string
           updated_at?: string
+          user_id?: string | null
           year: number
         }
         Update: {
@@ -37,6 +39,7 @@ export type Database = {
           created_at?: string
           id?: string
           updated_at?: string
+          user_id?: string | null
           year?: number
         }
         Relationships: []
@@ -49,6 +52,7 @@ export type Database = {
           items: Json
           month: string
           updated_at: string
+          user_id: string | null
           year: number
         }
         Insert: {
@@ -58,6 +62,7 @@ export type Database = {
           items?: Json
           month: string
           updated_at?: string
+          user_id?: string | null
           year: number
         }
         Update: {
@@ -67,6 +72,7 @@ export type Database = {
           items?: Json
           month?: string
           updated_at?: string
+          user_id?: string | null
           year?: number
         }
         Relationships: []
@@ -116,6 +122,7 @@ export type Database = {
           streak: number
           target_days: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           best_streak?: number
@@ -132,6 +139,7 @@ export type Database = {
           streak?: number
           target_days?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           best_streak?: number
@@ -148,6 +156,7 @@ export type Database = {
           streak?: number
           target_days?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -166,6 +175,7 @@ export type Database = {
           notes: string | null
           start_date: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           amount: number
@@ -181,6 +191,7 @@ export type Database = {
           notes?: string | null
           start_date: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           amount?: number
@@ -196,6 +207,7 @@ export type Database = {
           notes?: string | null
           start_date?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

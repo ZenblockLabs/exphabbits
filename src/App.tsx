@@ -1,14 +1,16 @@
-// Main App component - v8 - with recurring expenses
+// Main App component - v9 - with authentication
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { ExpenseProvider } from "@/contexts/ExpenseContext";
 import { HabitProvider } from "@/contexts/HabitContext";
 import { RecurringExpenseProvider } from "@/contexts/RecurringExpenseContext";
 import { Layout } from "@/components/Layout";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import MonthlyView from "./pages/MonthlyView";
 import AddEditExpense from "./pages/AddEditExpense";
@@ -18,6 +20,7 @@ import AddHabit from "./pages/AddHabit";
 import Challenge21Days from "./pages/Challenge21Days";
 import Notebook from "./pages/Notebook";
 import Settings from "./pages/Settings";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,37 +31,80 @@ function App() {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <TooltipProvider>
         <BrowserRouter>
-          <ExpenseProvider>
-            <RecurringExpenseProvider>
-              <HabitProvider>
-                <Toaster />
-                <Sonner />
-                <Layout>
+          <AuthProvider>
+            <ExpenseProvider>
+              <RecurringExpenseProvider>
+                <HabitProvider>
+                  <Toaster />
+                  <Sonner />
                   <Routes>
-                    {/* Expense routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/months" element={<MonthlyView />} />
-                    <Route path="/add" element={<AddEditExpense />} />
-                    <Route path="/edit/:year/:month" element={<AddEditExpense />} />
-                    <Route path="/recurring" element={<RecurringExpenses />} />
+                    {/* Auth route */}
+                    <Route path="/auth" element={<Auth />} />
+                    
+                    {/* Protected routes */}
+                    <Route path="/" element={
+                      <ProtectedRoute>
+                        <Layout><Index /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/months" element={
+                      <ProtectedRoute>
+                        <Layout><MonthlyView /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/add" element={
+                      <ProtectedRoute>
+                        <Layout><AddEditExpense /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/edit/:year/:month" element={
+                      <ProtectedRoute>
+                        <Layout><AddEditExpense /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/recurring" element={
+                      <ProtectedRoute>
+                        <Layout><RecurringExpenses /></Layout>
+                      </ProtectedRoute>
+                    } />
                     
                     {/* Habit routes */}
-                    <Route path="/habits" element={<HabitsDashboard />} />
-                    <Route path="/habits/add" element={<AddHabit />} />
-                    <Route path="/habits/challenge" element={<Challenge21Days />} />
+                    <Route path="/habits" element={
+                      <ProtectedRoute>
+                        <Layout><HabitsDashboard /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/habits/add" element={
+                      <ProtectedRoute>
+                        <Layout><AddHabit /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/habits/challenge" element={
+                      <ProtectedRoute>
+                        <Layout><Challenge21Days /></Layout>
+                      </ProtectedRoute>
+                    } />
                     
                     {/* Personal */}
-                    <Route path="/notebook" element={<Notebook />} />
+                    <Route path="/notebook" element={
+                      <ProtectedRoute>
+                        <Layout><Notebook /></Layout>
+                      </ProtectedRoute>
+                    } />
                     
                     {/* Settings */}
-                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/settings" element={
+                      <ProtectedRoute>
+                        <Layout><Settings /></Layout>
+                      </ProtectedRoute>
+                    } />
                     
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </Layout>
-              </HabitProvider>
-            </RecurringExpenseProvider>
-          </ExpenseProvider>
+                </HabitProvider>
+              </RecurringExpenseProvider>
+            </ExpenseProvider>
+          </AuthProvider>
         </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

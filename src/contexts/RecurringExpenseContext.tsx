@@ -1,6 +1,7 @@
-// RecurringExpenseContext - manages recurring/subscription expenses with database persistence
+// RecurringExpenseContext - v2 - with user authentication
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type RecurrenceFrequency = 'monthly' | 'weekly' | 'yearly' | 'quarterly';
 
@@ -32,12 +33,20 @@ interface RecurringExpenseContextType {
 const RecurringExpenseContext = createContext<RecurringExpenseContextType | undefined>(undefined);
 
 export const RecurringExpenseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch recurring expenses from database
+  // Fetch recurring expenses from database when user changes
   useEffect(() => {
+    if (!user) {
+      setRecurringExpenses([]);
+      setIsLoading(false);
+      return;
+    }
+
     const fetchRecurringExpenses = async () => {
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('recurring_expenses')
@@ -70,9 +79,11 @@ export const RecurringExpenseProvider: React.FC<{ children: ReactNode }> = ({ ch
     };
 
     fetchRecurringExpenses();
-  }, []);
+  }, [user]);
 
   const addRecurringExpense = async (expense: Omit<RecurringExpense, 'id'>) => {
+    if (!user) return;
+
     try {
       const { data, error } = await supabase
         .from('recurring_expenses')
@@ -87,6 +98,7 @@ export const RecurringExpenseProvider: React.FC<{ children: ReactNode }> = ({ ch
           last_applied: expense.lastApplied || null,
           icon: expense.icon || null,
           notes: expense.notes || null,
+          user_id: user.id,
         })
         .select()
         .single();
@@ -115,14 +127,14 @@ export const RecurringExpenseProvider: React.FC<{ children: ReactNode }> = ({ ch
   };
 
   const updateRecurringExpense = async (id: string, updates: Partial<RecurringExpense>) => {
-    // Update local state immediately
+    if (!user) return;
+
     setRecurringExpenses(prev =>
       prev.map(expense =>
         expense.id === id ? { ...expense, ...updates } : expense
       )
     );
 
-    // Sync to database
     try {
       const dbUpdates: Record<string, unknown> = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
@@ -146,10 +158,10 @@ export const RecurringExpenseProvider: React.FC<{ children: ReactNode }> = ({ ch
   };
 
   const deleteRecurringExpense = async (id: string) => {
-    // Update local state immediately
+    if (!user) return;
+
     setRecurringExpenses(prev => prev.filter(expense => expense.id !== id));
 
-    // Sync to database
     try {
       await supabase
         .from('recurring_expenses')
