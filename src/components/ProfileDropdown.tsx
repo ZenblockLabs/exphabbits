@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Settings, LogOut, Moon, Sun, Palette } from 'lucide-react';
+import { Settings, LogOut, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,19 +13,25 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const ProfileDropdown: React.FC = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     toast.success('Logged out successfully');
-    // In a real app, this would clear auth state
+    navigate('/auth');
   };
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+
+  const userInitial = user?.email?.charAt(0).toUpperCase() || 'U';
+  const userEmail = user?.email || 'guest@expenseflow.app';
 
   return (
     <DropdownMenu>
@@ -37,7 +43,7 @@ export const ProfileDropdown: React.FC = () => {
         >
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-              U
+              {userInitial}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -45,8 +51,8 @@ export const ProfileDropdown: React.FC = () => {
       <DropdownMenuContent align="end" className="w-56 bg-popover border border-border shadow-lg">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">Guest User</p>
-            <p className="text-xs text-muted-foreground">guest@expenseflow.app</p>
+            <p className="text-sm font-medium">{userEmail.split('@')[0]}</p>
+            <p className="text-xs text-muted-foreground">{userEmail}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
