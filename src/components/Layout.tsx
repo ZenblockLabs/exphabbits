@@ -335,26 +335,32 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main Content */}
       <main className="flex-1 min-w-0">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="flex items-center justify-between px-4 lg:px-8 py-4">
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 shadow-sm">
+          <div className="flex items-center justify-between px-4 lg:px-8 h-16">
+            {/* Left: Menu + Title */}
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden"
+                className="lg:hidden hover:bg-primary/10"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu className="w-5 h-5" />
               </Button>
-              <div className="hidden sm:block">
-                <h2 className="font-display font-semibold text-lg">
-                  {getCurrentPageLabel()}
-                </h2>
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <h2 className="font-display font-semibold text-lg tracking-tight">
+                    {getCurrentPageLabel()}
+                  </h2>
+                </div>
               </div>
             </div>
 
-            {/* Search */}
-            <SearchInput />
+            {/* Right: Search + Actions */}
+            <div className="flex items-center gap-3">
+              <SearchInput />
+            </div>
           </div>
         </header>
 
