@@ -1,4 +1,4 @@
-// Layout component - v6 - settings as navigation link
+// Layout component - v7 - with notifications and profile dropdown
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +26,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/SearchInput';
+import { NotificationBell } from '@/components/NotificationBell';
+import { ProfileDropdown } from '@/components/ProfileDropdown';
 import {
   Collapsible,
   CollapsibleContent,
@@ -358,8 +360,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {/* Right: Search + Actions */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <SearchInput />
+              <NotificationBell />
+              <ProfileDropdown />
             </div>
           </div>
         </header>
