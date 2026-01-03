@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, Fuel, DollarSign, ChevronLeft, ChevronRight, Keyboard } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
@@ -23,9 +23,33 @@ import {
 } from '@/components/ui/select';
 
 const Dashboard: React.FC = () => {
-  const { getFilteredYearData, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, availableYears } = useExpenses();
+  const { getFilteredYearData, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, availableYears, expenses } = useExpenses();
   const yearData = getFilteredYearData();
   const totals = calculateYearTotals(yearData);
+  
+  // State for showing grand totals (all years) vs year totals
+  const [showGrandTotal, setShowGrandTotal] = useState(false);
+  
+  // Calculate grand totals across all years
+  const grandTotals = useMemo(() => {
+    let totalSelf = 0;
+    let totalOther = 0;
+    let totalPetrol = 0;
+    
+    Object.keys(expenses).forEach((year) => {
+      const yearTotals = calculateYearTotals(expenses[Number(year)]);
+      totalSelf += yearTotals.totalSelf;
+      totalOther += yearTotals.totalOther;
+      totalPetrol += yearTotals.totalPetrol;
+    });
+    
+    return {
+      totalSelf,
+      totalOther,
+      totalPetrol,
+      yearTotal: totalSelf + totalOther + totalPetrol,
+    };
+  }, [expenses]);
   
   // Get top expenses for each stat card
   const topExpensesAll = getTopExpenses(yearData, 'all', 5);
@@ -180,40 +204,48 @@ const Dashboard: React.FC = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <StatCard
-          title={selectedMonth === 'All' ? 'Year Total' : `${selectedMonth} Total`}
-          value={totals.yearTotal}
+          title={selectedMonth === 'All' ? (showGrandTotal ? 'Grand Total' : 'Year Total') : `${selectedMonth} Total`}
+          value={selectedMonth === 'All' && showGrandTotal ? grandTotals.yearTotal : totals.yearTotal}
           icon={DollarSign}
           variant="primary"
-          subtitle={selectedMonth === 'All' ? `All expenses in ${selectedYear}` : `Expenses in ${selectedMonth} ${selectedYear}`}
+          subtitle={selectedMonth === 'All' ? (showGrandTotal ? 'All expenses across all years' : `All expenses in ${selectedYear}`) : `Expenses in ${selectedMonth} ${selectedYear}`}
           delay={0}
           topExpenses={topExpensesAll}
+          onIconClick={() => setShowGrandTotal(!showGrandTotal)}
+          iconClickable={selectedMonth === 'All'}
         />
         <StatCard
-          title="Self Expenses"
-          value={totals.totalSelf}
+          title={showGrandTotal && selectedMonth === 'All' ? "Self Expenses (All)" : "Self Expenses"}
+          value={selectedMonth === 'All' && showGrandTotal ? grandTotals.totalSelf : totals.totalSelf}
           icon={Wallet}
           variant="default"
-          subtitle="Rent, subscriptions, etc."
+          subtitle={showGrandTotal && selectedMonth === 'All' ? "All years combined" : "Rent, subscriptions, etc."}
           delay={0.1}
           topExpenses={topExpensesSelf}
+          onIconClick={() => setShowGrandTotal(!showGrandTotal)}
+          iconClickable={selectedMonth === 'All'}
         />
         <StatCard
-          title="Other Expenses"
-          value={totals.totalOther}
+          title={showGrandTotal && selectedMonth === 'All' ? "Other Expenses (All)" : "Other Expenses"}
+          value={selectedMonth === 'All' && showGrandTotal ? grandTotals.totalOther : totals.totalOther}
           icon={TrendingUp}
           variant="accent"
-          subtitle="Daily spending"
+          subtitle={showGrandTotal && selectedMonth === 'All' ? "All years combined" : "Daily spending"}
           delay={0.2}
           topExpenses={topExpensesOther}
+          onIconClick={() => setShowGrandTotal(!showGrandTotal)}
+          iconClickable={selectedMonth === 'All'}
         />
         <StatCard
-          title="Petrol"
-          value={totals.totalPetrol}
+          title={showGrandTotal && selectedMonth === 'All' ? "Petrol (All)" : "Petrol"}
+          value={selectedMonth === 'All' && showGrandTotal ? grandTotals.totalPetrol : totals.totalPetrol}
           icon={Fuel}
           variant="default"
-          subtitle="Fuel expenses"
+          subtitle={showGrandTotal && selectedMonth === 'All' ? "All years combined" : "Fuel expenses"}
           delay={0.3}
           topExpenses={topExpensesPetrol}
+          onIconClick={() => setShowGrandTotal(!showGrandTotal)}
+          iconClickable={selectedMonth === 'All'}
         />
       </div>
 

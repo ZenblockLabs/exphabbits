@@ -17,6 +17,8 @@ interface StatCardProps {
   subtitle?: string;
   delay?: number;
   topExpenses?: TopExpenseItem[];
+  onIconClick?: () => void;
+  iconClickable?: boolean;
 }
 
 const formatCurrency = (amount: number) => {
@@ -35,6 +37,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   subtitle,
   delay = 0,
   topExpenses,
+  onIconClick,
+  iconClickable = false,
 }) => {
   const cardContent = (
     <motion.div
@@ -64,11 +68,19 @@ export const StatCard: React.FC<StatCardProps> = ({
         </div>
         <div
           className={cn(
-            "p-3 rounded-xl",
+            "p-3 rounded-xl transition-all",
             variant === 'primary' && "bg-primary/10 text-primary",
             variant === 'accent' && "bg-accent/10 text-accent",
-            variant === 'default' && "bg-muted text-muted-foreground"
+            variant === 'default' && "bg-muted text-muted-foreground",
+            iconClickable && "cursor-pointer hover:scale-110 hover:ring-2 hover:ring-primary/50 active:scale-95"
           )}
+          onClick={(e) => {
+            if (onIconClick) {
+              e.stopPropagation();
+              onIconClick();
+            }
+          }}
+          title={iconClickable ? "Click to toggle Grand Total" : undefined}
         >
           <Icon className="w-5 h-5" />
         </div>
