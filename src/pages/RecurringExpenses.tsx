@@ -41,6 +41,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -82,6 +92,7 @@ const RecurringExpenses: React.FC = () => {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<RecurringExpense | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<RecurringExpense | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -166,12 +177,19 @@ const RecurringExpenses: React.FC = () => {
     handleCloseDialog();
   };
 
-  const handleDelete = (expense: RecurringExpense) => {
-    deleteRecurringExpense(expense.id);
-    toast({
-      title: 'Deleted',
-      description: `${expense.name} has been removed.`,
-    });
+  const handleDeleteClick = (expense: RecurringExpense) => {
+    setExpenseToDelete(expense);
+  };
+
+  const handleConfirmDelete = () => {
+    if (expenseToDelete) {
+      deleteRecurringExpense(expenseToDelete.id);
+      toast({
+        title: 'Deleted',
+        description: `${expenseToDelete.name} has been removed.`,
+      });
+      setExpenseToDelete(null);
+    }
   };
 
   const activeExpenses = recurringExpenses.filter(e => e.isActive);
@@ -324,7 +342,7 @@ const RecurringExpenses: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(expense)}
+                          onClick={() => handleDeleteClick(expense)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -372,7 +390,7 @@ const RecurringExpenses: React.FC = () => {
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(expense)}
+                        onClick={() => handleDeleteClick(expense)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -513,6 +531,24 @@ const RecurringExpenses: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!expenseToDelete} onOpenChange={(open) => !open && setExpenseToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Recurring Expense?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{expenseToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
