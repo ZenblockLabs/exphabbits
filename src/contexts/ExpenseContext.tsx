@@ -1,6 +1,7 @@
-// ExpenseContext - v5 - provides expense data and budget management with month filter
+// ExpenseContext - v6 - provides expense data with database persistence
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ExpenseData, YearData, MonthData, initialExpenseData, createEmptyYear, CATEGORIES } from '@/data/expenseData';
+import { supabase } from '@/integrations/supabase/client';
+import { ExpenseData, YearData, MonthData, createEmptyYear, CATEGORIES, MONTHS } from '@/data/expenseData';
 
 const currentYear = new Date().getFullYear();
 
@@ -28,59 +29,97 @@ interface ExpenseContextType {
   availableYears: number[];
   budgets: BudgetData;
   updateBudget: (year: number, category: CategoryKey, amount: number) => void;
+  isLoading: boolean;
 }
 
 const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'expense-tracker-data';
-const BUDGET_STORAGE_KEY = 'expense-tracker-budgets';
-
 export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [expenses, setExpenses] = useState<ExpenseData>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed && typeof parsed === 'object') {
-          // Always use initialExpenseData for 2024, 2025, 2026 to ensure latest sample data
-          return { 
-            ...parsed, 
-            2024: initialExpenseData[2024],
-            2025: initialExpenseData[2025],
-            2026: initialExpenseData[2026] 
-          };
-        }
-        return initialExpenseData;
-      } catch {
-        return initialExpenseData;
-      }
-    }
-    return initialExpenseData;
-  });
-
-  const [budgets, setBudgets] = useState<BudgetData>(() => {
-    const stored = localStorage.getItem(BUDGET_STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return {};
-      }
-    }
-    return {};
-  });
-  
+  const [expenses, setExpenses] = useState<ExpenseData>({});
+  const [budgets, setBudgets] = useState<BudgetData>({});
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch expenses from database
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-  }, [expenses]);
+    const fetchExpenses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('expenses')
+          .select('*');
+        
+        if (error) throw error;
 
+        // Convert database rows to ExpenseData format
+        const expenseData: ExpenseData = {};
+        
+        if (data && data.length > 0) {
+          data.forEach((row) => {
+            const year = row.year;
+            const month = row.month;
+            const category = row.category as keyof MonthData;
+            const items = row.items as number[] | { desc: string; amount: number }[];
+
+            if (!expenseData[year]) {
+              expenseData[year] = createEmptyYear();
+            }
+
+            // Type-safe assignment
+            const monthData = expenseData[year][month];
+            if (monthData) {
+              (monthData as unknown as Record<string, typeof items>)[category] = items;
+            }
+          });
+        }
+
+        // Ensure current year exists
+        if (!expenseData[currentYear]) {
+          expenseData[currentYear] = createEmptyYear();
+        }
+
+        setExpenses(expenseData);
+      } catch (error) {
+        console.error('Error fetching expenses:', error);
+        setExpenses({ [currentYear]: createEmptyYear() });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchExpenses();
+  }, []);
+
+  // Fetch budgets from database
   useEffect(() => {
-    localStorage.setItem(BUDGET_STORAGE_KEY, JSON.stringify(budgets));
-  }, [budgets]);
+    const fetchBudgets = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('budgets')
+          .select('*');
+        
+        if (error) throw error;
+
+        const budgetData: BudgetData = {};
+        
+        if (data) {
+          data.forEach((row) => {
+            if (!budgetData[row.year]) {
+              budgetData[row.year] = {};
+            }
+            budgetData[row.year][row.category] = Number(row.amount);
+          });
+        }
+
+        setBudgets(budgetData);
+      } catch (error) {
+        console.error('Error fetching budgets:', error);
+      }
+    };
+
+    fetchBudgets();
+  }, []);
 
   const getYearData = (year?: number): YearData => {
     const targetYear = year ?? selectedYear;
@@ -95,13 +134,13 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       return yearData;
     }
     
-    // Return only the selected month's data
     const filteredData: YearData = {};
     filteredData[selectedMonth] = yearData[selectedMonth] || createEmptyYear()[selectedMonth];
     return filteredData;
   };
 
-  const updateMonth = (year: number, month: string, data: MonthData) => {
+  const updateMonth = async (year: number, month: string, data: MonthData) => {
+    // Update local state immediately
     setExpenses((prev) => ({
       ...prev,
       [year]: {
@@ -109,9 +148,43 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
         [month]: data,
       },
     }));
+
+    // Sync to database
+    try {
+      const categories = Object.keys(CATEGORIES) as CategoryKey[];
+      
+      for (const category of categories) {
+        const items = data[category];
+        
+        // Check if record exists
+        const { data: existing } = await supabase
+          .from('expenses')
+          .select('id')
+          .eq('year', year)
+          .eq('month', month)
+          .eq('category', category)
+          .maybeSingle();
+
+        if (existing) {
+          // Update existing record
+          await supabase
+            .from('expenses')
+            .update({ items: items as unknown as null })
+            .eq('id', existing.id);
+        } else {
+          // Insert new record
+          await supabase
+            .from('expenses')
+            .insert({ year, month, category, items: items as unknown as null });
+        }
+      }
+    } catch (error) {
+      console.error('Error saving expenses:', error);
+    }
   };
 
-  const updateBudget = (year: number, category: CategoryKey, amount: number) => {
+  const updateBudget = async (year: number, category: CategoryKey, amount: number) => {
+    // Update local state immediately
     setBudgets((prev) => ({
       ...prev,
       [year]: {
@@ -119,9 +192,34 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
         [category]: amount,
       },
     }));
+
+    // Sync to database
+    try {
+      const { data: existing } = await supabase
+        .from('budgets')
+        .select('id')
+        .eq('year', year)
+        .eq('category', category)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('budgets')
+          .update({ amount })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('budgets')
+          .insert({ year, category, amount });
+      }
+    } catch (error) {
+      console.error('Error saving budget:', error);
+    }
   };
 
-  const availableYears = Object.keys(expenses).map(Number).sort((a, b) => b - a);
+  const availableYears = Object.keys(expenses).length > 0 
+    ? Object.keys(expenses).map(Number).sort((a, b) => b - a)
+    : [currentYear];
 
   return (
     <ExpenseContext.Provider value={{ 
@@ -138,6 +236,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       availableYears,
       budgets,
       updateBudget,
+      isLoading,
     }}>
       {children}
     </ExpenseContext.Provider>

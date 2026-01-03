@@ -14,7 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      budgets: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          items: Json
+          month: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          items?: Json
+          month: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          items?: Json
+          month?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      habit_completions: {
+        Row: {
+          completed_date: string
+          created_at: string
+          habit_id: string
+          id: string
+        }
+        Insert: {
+          completed_date: string
+          created_at?: string
+          habit_id: string
+          id?: string
+        }
+        Update: {
+          completed_date?: string
+          created_at?: string
+          habit_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          best_streak: number
+          category: string
+          color: string
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          reminder_enabled: boolean
+          reminder_time: string | null
+          streak: number
+          target_days: number
+          updated_at: string
+        }
+        Insert: {
+          best_streak?: number
+          category: string
+          color?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          reminder_enabled?: boolean
+          reminder_time?: string | null
+          streak?: number
+          target_days?: number
+          updated_at?: string
+        }
+        Update: {
+          best_streak?: number
+          category?: string
+          color?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          reminder_enabled?: boolean
+          reminder_time?: string | null
+          streak?: number
+          target_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recurring_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          end_date: string | null
+          frequency: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          last_applied: string | null
+          name: string
+          notes: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          end_date?: string | null
+          frequency: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          last_applied?: string | null
+          name: string
+          notes?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          end_date?: string | null
+          frequency?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          last_applied?: string | null
+          name?: string
+          notes?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

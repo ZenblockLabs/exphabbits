@@ -1,4 +1,6 @@
+// HabitContext - manages habits with database persistence
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export type HabitCategory = 'health' | 'productivity' | 'learning' | 'mindfulness' | 'fitness' | 'other';
 
@@ -13,8 +15,8 @@ export const HABIT_CATEGORIES: { value: HabitCategory; label: string; color: str
 
 export interface HabitReminder {
   enabled: boolean;
-  time: string; // HH:mm format
-  days: number[]; // 0-6, Sunday-Saturday
+  time: string;
+  days: number[];
 }
 
 export interface Habit {
@@ -26,7 +28,7 @@ export interface Habit {
   color: string;
   icon: string;
   createdAt: Date;
-  completedDates: string[]; // ISO date strings
+  completedDates: string[];
   reminder?: HabitReminder;
 }
 
@@ -41,77 +43,81 @@ interface HabitContextType {
   setCategoryFilter: (category: HabitCategory | 'all') => void;
   requestNotificationPermission: () => Promise<boolean>;
   notificationPermission: NotificationPermission | null;
+  isLoading: boolean;
 }
 
 const HabitContext = createContext<HabitContextType | undefined>(undefined);
 
-const sampleHabits: Habit[] = [
-  {
-    id: '1',
-    name: 'Morning Exercise',
-    description: '30 minutes of workout',
-    frequency: 'daily',
-    category: 'fitness',
-    color: 'hsl(142, 76%, 36%)',
-    icon: 'Dumbbell',
-    createdAt: new Date('2024-01-01'),
-    completedDates: [
-      '2024-12-28', '2024-12-29', '2024-12-30', '2024-12-31',
-      '2025-01-01', '2025-01-02'
-    ],
-    reminder: { enabled: true, time: '07:00', days: [1, 2, 3, 4, 5] },
-  },
-  {
-    id: '2',
-    name: 'Read 20 Pages',
-    description: 'Read at least 20 pages of a book',
-    frequency: 'daily',
-    category: 'learning',
-    color: 'hsl(221, 83%, 53%)',
-    icon: 'BookOpen',
-    createdAt: new Date('2024-01-15'),
-    completedDates: [
-      '2024-12-27', '2024-12-29', '2024-12-31', '2025-01-01'
-    ],
-    reminder: { enabled: true, time: '21:00', days: [0, 1, 2, 3, 4, 5, 6] },
-  },
-  {
-    id: '3',
-    name: 'Meditation',
-    description: '10 minutes of mindfulness',
-    frequency: 'daily',
-    category: 'mindfulness',
-    color: 'hsl(270, 76%, 53%)',
-    icon: 'Brain',
-    createdAt: new Date('2024-02-01'),
-    completedDates: [
-      '2024-12-28', '2024-12-29', '2024-12-30', '2024-12-31',
-      '2025-01-01', '2025-01-02'
-    ],
-    reminder: { enabled: true, time: '06:30', days: [0, 1, 2, 3, 4, 5, 6] },
-  },
-  {
-    id: '4',
-    name: 'Weekly Review',
-    description: 'Plan and review the week',
-    frequency: 'weekly',
-    category: 'productivity',
-    color: 'hsl(25, 95%, 53%)',
-    icon: 'Calendar',
-    createdAt: new Date('2024-01-01'),
-    completedDates: ['2024-12-29', '2025-01-05'],
-  },
-];
-
 export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [habits, setHabits] = useState<Habit[]>(sampleHabits);
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<HabitCategory | 'all'>('all');
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
+  }, []);
+
+  // Fetch habits and completions from database
+  useEffect(() => {
+    const fetchHabits = async () => {
+      try {
+        // Fetch habits
+        const { data: habitsData, error: habitsError } = await supabase
+          .from('habits')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (habitsError) throw habitsError;
+
+        // Fetch all completions
+        const { data: completionsData, error: completionsError } = await supabase
+          .from('habit_completions')
+          .select('*');
+        
+        if (completionsError) throw completionsError;
+
+        // Group completions by habit
+        const completionsByHabit: Record<string, string[]> = {};
+        if (completionsData) {
+          completionsData.forEach((completion) => {
+            if (!completionsByHabit[completion.habit_id]) {
+              completionsByHabit[completion.habit_id] = [];
+            }
+            completionsByHabit[completion.habit_id].push(completion.completed_date);
+          });
+        }
+
+        // Map to Habit interface
+        if (habitsData) {
+          const habits: Habit[] = habitsData.map((row) => ({
+            id: row.id,
+            name: row.name,
+            description: row.description || '',
+            frequency: 'daily' as const, // Default to daily
+            category: row.category as HabitCategory,
+            color: row.color,
+            icon: row.icon,
+            createdAt: new Date(row.created_at),
+            completedDates: completionsByHabit[row.id] || [],
+            reminder: row.reminder_enabled ? {
+              enabled: row.reminder_enabled,
+              time: row.reminder_time || '09:00',
+              days: [0, 1, 2, 3, 4, 5, 6],
+            } : undefined,
+          }));
+          setHabits(habits);
+        }
+      } catch (error) {
+        console.error('Error fetching habits:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHabits();
   }, []);
 
   // Check and send notifications
@@ -153,45 +159,137 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return permission === 'granted';
   };
 
-  const addHabit = (habitData: Omit<Habit, 'id' | 'createdAt' | 'completedDates'>) => {
-    const newHabit: Habit = {
-      ...habitData,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      completedDates: [],
-    };
-    setHabits((prev) => [...prev, newHabit]);
+  const addHabit = async (habitData: Omit<Habit, 'id' | 'createdAt' | 'completedDates'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('habits')
+        .insert({
+          name: habitData.name,
+          description: habitData.description,
+          category: habitData.category,
+          icon: habitData.icon,
+          color: habitData.color,
+          reminder_enabled: habitData.reminder?.enabled || false,
+          reminder_time: habitData.reminder?.time || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const newHabit: Habit = {
+          id: data.id,
+          name: data.name,
+          description: data.description || '',
+          frequency: 'daily',
+          category: data.category as HabitCategory,
+          color: data.color,
+          icon: data.icon,
+          createdAt: new Date(data.created_at),
+          completedDates: [],
+          reminder: data.reminder_enabled ? {
+            enabled: data.reminder_enabled,
+            time: data.reminder_time || '09:00',
+            days: [0, 1, 2, 3, 4, 5, 6],
+          } : undefined,
+        };
+        setHabits(prev => [newHabit, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding habit:', error);
+    }
   };
 
-  const updateHabit = (id: string, updates: Partial<Omit<Habit, 'id' | 'createdAt'>>) => {
-    setHabits((prev) =>
-      prev.map((habit) =>
+  const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'createdAt'>>) => {
+    // Update local state immediately
+    setHabits(prev =>
+      prev.map(habit =>
         habit.id === id ? { ...habit, ...updates } : habit
       )
     );
+
+    // Sync to database
+    try {
+      const dbUpdates: Record<string, unknown> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
+      if (updates.color !== undefined) dbUpdates.color = updates.color;
+      if (updates.reminder !== undefined) {
+        dbUpdates.reminder_enabled = updates.reminder.enabled;
+        dbUpdates.reminder_time = updates.reminder.time;
+      }
+
+      await supabase
+        .from('habits')
+        .update(dbUpdates)
+        .eq('id', id);
+    } catch (error) {
+      console.error('Error updating habit:', error);
+    }
   };
 
-  const deleteHabit = (id: string) => {
-    setHabits((prev) => prev.filter((h) => h.id !== id));
+  const deleteHabit = async (id: string) => {
+    // Update local state immediately
+    setHabits(prev => prev.filter(h => h.id !== id));
+
+    // Sync to database (completions will cascade delete)
+    try {
+      await supabase
+        .from('habits')
+        .delete()
+        .eq('id', id);
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+    }
   };
 
-  const toggleHabitCompletion = (habitId: string, date: string) => {
-    setHabits((prev) =>
-      prev.map((habit) => {
-        if (habit.id !== habitId) return habit;
-        const isCompleted = habit.completedDates.includes(date);
+  const toggleHabitCompletion = async (habitId: string, date: string) => {
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
+
+    const isCompleted = habit.completedDates.includes(date);
+
+    // Update local state immediately
+    setHabits(prev =>
+      prev.map(h => {
+        if (h.id !== habitId) return h;
         return {
-          ...habit,
+          ...h,
           completedDates: isCompleted
-            ? habit.completedDates.filter((d) => d !== date)
-            : [...habit.completedDates, date],
+            ? h.completedDates.filter(d => d !== date)
+            : [...h.completedDates, date],
         };
       })
     );
+
+    // Sync to database
+    try {
+      if (isCompleted) {
+        // Remove completion
+        await supabase
+          .from('habit_completions')
+          .delete()
+          .eq('habit_id', habitId)
+          .eq('completed_date', date);
+      } else {
+        // Add completion
+        await supabase
+          .from('habit_completions')
+          .insert({
+            habit_id: habitId,
+            completed_date: date,
+          });
+      }
+    } catch (error) {
+      console.error('Error toggling habit completion:', error);
+    }
   };
 
   const getCompletionRate = (habitId: string, days: number): number => {
-    const habit = habits.find((h) => h.id === habitId);
+    const habit = habits.find(h => h.id === habitId);
     if (!habit) return 0;
     
     const today = new Date();
@@ -222,6 +320,7 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setCategoryFilter,
         requestNotificationPermission,
         notificationPermission,
+        isLoading,
       }}
     >
       {children}
