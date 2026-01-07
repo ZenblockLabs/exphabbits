@@ -651,12 +651,12 @@ export const calculateYearTotals = (yearData: YearData) => {
   let totalPetrol = 0;
 
   Object.values(yearData).forEach((month) => {
-    totalSelf += calculateCategoryTotal(month.selfExpense);
-    totalOther +=
+    totalSelf += 
+      calculateCategoryTotal(month.selfExpense) +
       calculateCategoryTotal(month.snacks) +
       calculateCategoryTotal(month.food) +
-      calculateCategoryTotal(month.travellingCharge) +
-      calculateCategoryTotal(month.otherExpenses);
+      calculateCategoryTotal(month.travellingCharge);
+    totalOther += calculateCategoryTotal(month.otherExpenses);
     totalPetrol += calculateCategoryTotal(month.petrol);
   });
 
