@@ -361,7 +361,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Right: Search + Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <SearchInput />
+              {/* Only show search on expense-related pages */}
+              {(location.pathname === '/' || 
+                location.pathname === '/months' || 
+                location.pathname.startsWith('/add') || 
+                location.pathname.startsWith('/edit') ||
+                location.pathname === '/recurring') && (
+                <SearchInput />
+              )}
               <NotificationBell />
               <ProfileDropdown />
             </div>
