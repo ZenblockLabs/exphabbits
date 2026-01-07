@@ -22,6 +22,7 @@ import Notebook from "./pages/Notebook";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import CombinedDashboard from "./pages/CombinedDashboard";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,11 @@ function App() {
                     <Route path="/auth" element={<Auth />} />
                     
                     {/* Protected routes */}
+                    <Route path="/dashboard" element={
+                      <ProtectedRoute>
+                        <Layout><CombinedDashboard /></Layout>
+                      </ProtectedRoute>
+                    } />
                     <Route path="/" element={
                       <ProtectedRoute>
                         <Layout><Index /></Layout>

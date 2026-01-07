@@ -49,12 +49,17 @@ interface NavGroup {
   items: { to: string; icon: React.ElementType; label: string }[];
 }
 
+// Top-level dashboard item (not in a group)
+const topLevelItems = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+];
+
 const navGroups: NavGroup[] = [
   {
     label: 'Expenses',
     icon: Receipt,
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/', icon: Wallet, label: 'Expense Dashboard' },
       { to: '/months', icon: Calendar, label: 'Monthly View' },
       { to: '/add', icon: PlusCircle, label: 'Add Expense' },
       { to: '/recurring', icon: RefreshCw, label: 'Recurring' },
@@ -200,6 +205,52 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Navigation */}
           <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+            {/* Top-level Dashboard link */}
+            {collapsed ? (
+              topLevelItems.map((item) => (
+                <Tooltip key={item.to}>
+                  <TooltipTrigger asChild>
+                    <NavLink
+                      to={item.to}
+                      onClick={closeSidebar}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center justify-center w-full p-3 rounded-lg transition-all duration-200",
+                          isActive
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        )
+                      }
+                    >
+                      <item.icon className="w-5 h-5" />
+                    </NavLink>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              ))
+            ) : (
+              topLevelItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={closeSidebar}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-2",
+                      isActive
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )
+                  }
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.label}
+                </NavLink>
+              ))
+            )}
+
             {navGroups.map((group) => {
               const visibleItems = getVisibleItems(group);
               if (visibleItems.length === 0) return null;
