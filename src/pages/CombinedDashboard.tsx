@@ -9,6 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import StreakLeaderboard from '@/components/StreakLeaderboard';
+import { 
+  Heart, Dumbbell, Brain, Coffee, Book, Music, Bike, Moon, Sun, Droplets,
+  Utensils, Pill, Cigarette, Wine, Timer, Pencil, Code, Gamepad2, Camera, Palette,
+  Calculator, Briefcase, Phone, Mail, MessageSquare, Users, Home, Car, Plane, Map,
+  ShoppingCart, Gift, Star, Zap, Trophy, Medal, Award, Flag, Bookmark, Tag,
+  Smile, Frown, Meh, Heart as HeartIcon, ThumbsUp, ThumbsDown, Eye, EyeOff
+} from 'lucide-react';
 
 const CombinedDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -52,6 +60,15 @@ const CombinedDashboard: React.FC = () => {
     .map(h => ({ ...h, streak: getCurrentStreak(h) }))
     .sort((a, b) => b.streak - a.streak)
     .slice(0, 3);
+
+  // Icon map for habit icons
+  const iconMap: Record<string, React.ElementType> = {
+    Heart, Dumbbell, Brain, Coffee, Book, Music, Bike, Moon, Sun, Droplets,
+    Utensils, Pill, Cigarette, Wine, Timer, Pencil, Code, Gamepad2, Camera, Palette,
+    Calculator, Briefcase, Phone, Mail, MessageSquare, Users, Home, Car, Plane, Map,
+    ShoppingCart, Gift, Star, Zap, Trophy, Medal, Award, Flag, Bookmark, Tag,
+    Smile, Frown, Meh, HeartIcon, ThumbsUp, ThumbsDown, Eye, EyeOff, Target, Flame,
+  };
 
   // Monthly expense trend data
   const monthlyExpenseTrend = useMemo(() => {
@@ -391,11 +408,22 @@ const CombinedDashboard: React.FC = () => {
         </motion.div>
       </div>
 
+      {/* Streak Leaderboard */}
+      {habits.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <StreakLeaderboard habits={habits} iconMap={iconMap} />
+        </motion.div>
+      )}
+
       {/* Quick Actions */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.6 }}
       >
         <Card>
           <CardHeader>
