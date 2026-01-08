@@ -10,6 +10,7 @@ import { ExpenseProvider } from "@/contexts/ExpenseContext";
 import { HabitProvider } from "@/contexts/HabitContext";
 import { RecurringExpenseProvider } from "@/contexts/RecurringExpenseContext";
 import { Layout } from "@/components/Layout";
+import { AppWrapper } from "@/components/AppWrapper";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import MonthlyView from "./pages/MonthlyView";
@@ -33,11 +34,12 @@ function App() {
         <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
-            <ExpenseProvider>
-              <RecurringExpenseProvider>
-                <HabitProvider>
-                  <Toaster />
-                  <Sonner />
+            <AppWrapper>
+              <ExpenseProvider>
+                <RecurringExpenseProvider>
+                  <HabitProvider>
+                    <Toaster />
+                    <Sonner />
                   <Routes>
                     {/* Auth route */}
                     <Route path="/auth" element={<Auth />} />
@@ -107,9 +109,10 @@ function App() {
                     
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </HabitProvider>
-              </RecurringExpenseProvider>
-            </ExpenseProvider>
+                  </HabitProvider>
+                </RecurringExpenseProvider>
+              </ExpenseProvider>
+            </AppWrapper>
           </AuthProvider>
         </BrowserRouter>
         </TooltipProvider>
