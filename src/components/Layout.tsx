@@ -8,6 +8,7 @@ import {
   PlusCircle, 
   Menu, 
   X,
+  Search,
   Wallet,
   TrendingUp,
   ChevronDown,
@@ -25,7 +26,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { SearchInput } from '@/components/SearchInput';
+import { Input } from '@/components/ui/input';
+import { useExpenses } from '@/contexts/ExpenseContext';
 import { NotificationBell } from '@/components/NotificationBell';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import {
@@ -38,6 +40,58 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+
+// Search Icon Button with popover search
+const SearchIconButton: React.FC = () => {
+  const { searchTerm, setSearchTerm } = useExpenses();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "relative hover:bg-primary/10",
+            searchTerm && "text-primary"
+          )}
+        >
+          <Search className="w-5 h-5" />
+          {searchTerm && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-2" align="end">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search expenses..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 pr-8"
+            autoFocus
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -182,9 +236,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Logo */}
           <div className={cn("p-4 flex items-center gap-3", collapsed && "justify-center")}>
-            <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center flex-shrink-0">
-              <Wallet className="w-5 h-5 text-sidebar-primary-foreground" />
-            </div>
+            <img 
+              src="/habex-logo.png" 
+              alt="Habex" 
+              className="w-10 h-10 rounded-xl flex-shrink-0"
+            />
             {!collapsed && (
               <div className="overflow-hidden">
                 <h1 className="font-display font-bold text-lg text-sidebar-foreground truncate">Habex</h1>
@@ -390,7 +446,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Top Bar */}
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 shadow-sm">
           <div className="flex items-center justify-between px-4 lg:px-8 h-16">
-            {/* Left: Menu + Title */}
+            {/* Left: Menu + Logo + Title */}
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
@@ -401,7 +457,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Menu className="w-5 h-5" />
               </Button>
               <div className="flex items-center gap-3">
-                <div className="hidden sm:flex items-center gap-2">
+                <img 
+                  src="/habex-logo.png" 
+                  alt="Habex" 
+                  className="w-8 h-8 rounded-lg lg:hidden"
+                />
+                <h1 className="font-display font-bold text-xl text-primary lg:hidden">Habex</h1>
+                <div className="hidden lg:flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   <h2 className="font-display font-semibold text-lg tracking-tight">
                     {getCurrentPageLabel()}
@@ -410,15 +472,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </div>
 
-            {/* Right: Search + Actions */}
+            {/* Right: Search Icon + Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Only show search on expense-related pages */}
-              {(location.pathname === '/' || 
+              {/* Search icon for expense-related pages */}
+              {(location.pathname === '/expenses' || 
                 location.pathname === '/months' || 
                 location.pathname.startsWith('/add') || 
                 location.pathname.startsWith('/edit') ||
                 location.pathname === '/recurring') && (
-                <SearchInput />
+                <SearchIconButton />
               )}
               <NotificationBell />
               <ProfileDropdown />
