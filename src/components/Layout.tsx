@@ -187,8 +187,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
             {!collapsed && (
               <div className="overflow-hidden">
-                <h1 className="font-display font-bold text-lg text-sidebar-foreground truncate">ExpenseFlow</h1>
-                <p className="text-xs text-sidebar-foreground/60 truncate">Track your spending</p>
+                <h1 className="font-display font-bold text-lg text-sidebar-foreground truncate">Habex</h1>
+                <p className="text-xs text-sidebar-foreground/60 truncate">Habits & Expenses</p>
               </div>
             )}
             {!collapsed && (
