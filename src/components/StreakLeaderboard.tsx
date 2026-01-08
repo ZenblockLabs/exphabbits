@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, Award, Flame, Star, Zap, Target } from 'lucide-react';
+import { Trophy, Medal, Award, Flame, Star, Zap, Target, Crown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Habit } from '@/contexts/HabitContext';
 import { format } from 'date-fns';
@@ -139,6 +139,14 @@ const StreakLeaderboard: React.FC<StreakLeaderboardProps> = ({ habits, iconMap }
                 {streakBadge.icon}
                 <span>{habit.streak} days</span>
               </div>
+              
+              {/* Best streak indicator */}
+              {habit.bestStreak > 0 && (
+                <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-purple-500/20 text-purple-600 dark:text-purple-400">
+                  <Crown className="h-3 w-3" />
+                  <span>Best: {habit.bestStreak}</span>
+                </div>
+              )}
             </motion.div>
           );
         })}
