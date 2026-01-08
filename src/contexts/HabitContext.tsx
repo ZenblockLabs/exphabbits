@@ -30,12 +30,13 @@ export interface Habit {
   icon: string;
   createdAt: Date;
   completedDates: string[];
+  bestStreak: number;
   reminder?: HabitReminder;
 }
 
 interface HabitContextType {
   habits: Habit[];
-  addHabit: (habit: Omit<Habit, 'id' | 'createdAt' | 'completedDates'>) => void;
+  addHabit: (habit: Omit<Habit, 'id' | 'createdAt' | 'completedDates' | 'bestStreak'>) => void;
   updateHabit: (id: string, updates: Partial<Omit<Habit, 'id' | 'createdAt'>>) => void;
   deleteHabit: (id: string) => void;
   toggleHabitCompletion: (habitId: string, date: string) => void;
@@ -107,6 +108,7 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             icon: row.icon,
             createdAt: new Date(row.created_at),
             completedDates: completionsByHabit[row.id] || [],
+            bestStreak: row.best_streak || 0,
             reminder: row.reminder_enabled ? {
               enabled: row.reminder_enabled,
               time: row.reminder_time || '09:00',
@@ -196,6 +198,7 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           icon: data.icon,
           createdAt: new Date(data.created_at),
           completedDates: [],
+          bestStreak: data.best_streak || 0,
           reminder: data.reminder_enabled ? {
             enabled: data.reminder_enabled,
             time: data.reminder_time || '09:00',
