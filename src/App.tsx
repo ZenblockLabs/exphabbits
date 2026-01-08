@@ -43,12 +43,12 @@ function App() {
                     <Route path="/auth" element={<Auth />} />
                     
                     {/* Protected routes */}
-                    <Route path="/dashboard" element={
+                    <Route path="/" element={
                       <ProtectedRoute>
                         <Layout><CombinedDashboard /></Layout>
                       </ProtectedRoute>
                     } />
-                    <Route path="/" element={
+                    <Route path="/expenses" element={
                       <ProtectedRoute>
                         <Layout><Index /></Layout>
                       </ProtectedRoute>

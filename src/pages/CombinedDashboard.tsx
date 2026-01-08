@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Target, TrendingUp, Fuel, DollarSign, Flame, CheckCircle2, Calendar } from 'lucide-react';
+import { Wallet, Target, TrendingUp, Fuel, DollarSign, Flame, CheckCircle2, Calendar, BarChart3 } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { useHabits } from '@/contexts/HabitContext';
 import { calculateYearTotals } from '@/data/expenseData';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const CombinedDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -52,6 +53,62 @@ const CombinedDashboard: React.FC = () => {
     .sort((a, b) => b.streak - a.streak)
     .slice(0, 3);
 
+  // Monthly expense trend data
+  const monthlyExpenseTrend = useMemo(() => {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    return months.map((month, index) => {
+      const monthData = yearData[month];
+      if (!monthData) {
+        return { month: shortMonths[index], total: 0, self: 0, other: 0 };
+      }
+      
+      const snacksTotal = monthData.snacks?.reduce((a, b) => a + b, 0) || 0;
+      const foodTotal = monthData.food?.reduce((a, b) => a + b, 0) || 0;
+      const travelTotal = monthData.travellingCharge?.reduce((a, b) => a + b, 0) || 0;
+      const petrolTotal = monthData.petrol?.reduce((a, b) => a + b, 0) || 0;
+      const otherTotal = monthData.otherExpenses?.reduce((a, b) => a + b.amount, 0) || 0;
+      const selfTotal = monthData.selfExpense?.reduce((a, b) => a + b.amount, 0) || 0;
+      
+      const self = snacksTotal + foodTotal + travelTotal + selfTotal;
+      const other = otherTotal;
+      
+      return {
+        month: shortMonths[index],
+        total: self + other + petrolTotal,
+        self,
+        other,
+      };
+    });
+  }, [yearData]);
+
+  // Weekly habit completion data (last 7 days)
+  const weeklyHabitData = useMemo(() => {
+    const data = [];
+    const now = new Date();
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const completed = habits.filter(h => h.completedDates.includes(dateStr)).length;
+      const total = habits.length;
+      const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+      
+      data.push({
+        day: dayNames[date.getDay()],
+        completed,
+        rate,
+        total,
+      });
+    }
+    
+    return data;
+  }, [habits]);
+
   return (
     <div className="space-y-8">
       {/* Hero Section */}
@@ -91,7 +148,7 @@ const CombinedDashboard: React.FC = () => {
                     <CardDescription>{selectedYear} Overview</CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/expenses')}>
                   View All →
                 </Button>
               </div>
@@ -213,11 +270,132 @@ const CombinedDashboard: React.FC = () => {
         </motion.div>
       </div>
 
+      {/* Trend Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Expense Trend */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Monthly Expense Trend</CardTitle>
+                  <CardDescription>{selectedYear} spending pattern</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={monthlyExpenseTrend}>
+                    <defs>
+                      <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                      tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                      formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Total']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      fill="url(#colorTotal)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Weekly Habit Completion */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <BarChart3 className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Weekly Habit Completion</CardTitle>
+                  <CardDescription>Last 7 days completion rate</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyHabitData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="day" 
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      className="text-muted-foreground"
+                      domain={[0, 100]}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                      formatter={(value: number, name: string) => {
+                        if (name === 'rate') return [`${value}%`, 'Completion Rate'];
+                        return [value, name];
+                      }}
+                    />
+                    <Bar
+                      dataKey="rate"
+                      fill="hsl(142, 76%, 36%)"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
       {/* Quick Actions */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.5 }}
       >
         <Card>
           <CardHeader>
