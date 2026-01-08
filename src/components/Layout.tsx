@@ -51,7 +51,7 @@ interface NavGroup {
 
 // Top-level dashboard item (not in a group)
 const topLevelItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
 ];
 
 const navGroups: NavGroup[] = [
@@ -59,7 +59,7 @@ const navGroups: NavGroup[] = [
     label: 'Expenses',
     icon: Receipt,
     items: [
-      { to: '/', icon: Wallet, label: 'Expense Dashboard' },
+      { to: '/expenses', icon: Wallet, label: 'Expense Dashboard' },
       { to: '/months', icon: Calendar, label: 'Monthly View' },
       { to: '/add', icon: PlusCircle, label: 'Add Expense' },
       { to: '/recurring', icon: RefreshCw, label: 'Recurring' },
