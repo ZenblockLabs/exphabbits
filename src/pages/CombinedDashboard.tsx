@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import StreakLeaderboard from '@/components/StreakLeaderboard';
+import HabitBadges from '@/components/HabitBadges';
 import { 
   Heart, Dumbbell, Brain, Coffee, Book, Music, Bike, Moon, Sun, Droplets,
   Utensils, Pill, Cigarette, Wine, Timer, Pencil, Code, Gamepad2, Camera, Palette,
@@ -408,12 +409,23 @@ const CombinedDashboard: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Streak Leaderboard */}
+      {/* Achievements/Badges */}
       {habits.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
+        >
+          <HabitBadges habits={habits} getCurrentStreak={getCurrentStreak} />
+        </motion.div>
+      )}
+
+      {/* Streak Leaderboard */}
+      {habits.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
         >
           <StreakLeaderboard habits={habits} iconMap={iconMap} />
         </motion.div>
