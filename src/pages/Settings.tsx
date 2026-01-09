@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from 'next-themes';
+import { useNavigate } from 'react-router-dom';
 import { 
   Settings as SettingsIcon, 
   Sun, 
@@ -19,12 +20,30 @@ import {
   Flame,
   User,
   BookOpen,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const VISIBILITY_STORAGE_KEY = 'sidebar-visibility-settings';
@@ -61,16 +80,59 @@ const navGroups = [
 
 const Settings: React.FC = () => {
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   
-  const [collapsed, setCollapsed] = React.useState(() => {
+  const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem(COLLAPSED_STORAGE_KEY);
     return saved === 'true';
   });
 
-  const [hiddenItems, setHiddenItems] = React.useState<string[]>(() => {
+  const [hiddenItems, setHiddenItems] = useState<string[]>(() => {
     const saved = localStorage.getItem(VISIBILITY_STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
   });
+
+  const [confirmText, setConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (confirmText !== 'DELETE') {
+      toast.error('Please type DELETE to confirm');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      // Delete user data from all tables first
+      if (user) {
+        await Promise.all([
+          supabase.from('habits').delete().eq('user_id', user.id),
+          supabase.from('expenses').delete().eq('user_id', user.id),
+          supabase.from('budgets').delete().eq('user_id', user.id),
+          supabase.from('recurring_expenses').delete().eq('user_id', user.id),
+        ]);
+      }
+
+      // Sign out and notify user
+      await signOut();
+      
+      // Clear local storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      toast.success('Account data deleted. Please contact support to complete account removal.');
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Failed to delete account. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setDialogOpen(false);
+      setConfirmText('');
+    }
+  };
 
   const handleCollapseChange = (value: boolean) => {
     setCollapsed(value);
@@ -211,6 +273,73 @@ const Settings: React.FC = () => {
               </div>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg text-destructive">
+            <AlertTriangle className="w-5 h-5" />
+            Danger Zone
+          </CardTitle>
+          <CardDescription>Irreversible actions for your account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+            <div>
+              <p className="font-medium text-destructive">Delete Account</p>
+              <p className="text-xs text-muted-foreground">
+                Permanently delete your account and all associated data
+              </p>
+            </div>
+            <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="w-5 h-5" />
+                    Delete Account
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-3">
+                    <p>
+                      This action is <strong>irreversible</strong>. All your data including habits, 
+                      expenses, and budgets will be permanently deleted.
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-delete" className="text-sm font-medium">
+                        Type <span className="font-mono text-destructive">DELETE</span> to confirm
+                      </Label>
+                      <Input
+                        id="confirm-delete"
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        placeholder="Type DELETE"
+                        className="font-mono"
+                      />
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setConfirmText('')}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteAccount}
+                    disabled={confirmText !== 'DELETE' || isDeleting}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete Account'}
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
     </div>
