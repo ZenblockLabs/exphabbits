@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Wallet, TrendingUp, Target } from 'lucide-react';
+import { Wallet, TrendingUp, Target, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -20,6 +21,10 @@ const Auth: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmailError, setResetEmailError] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -84,6 +89,37 @@ const Auth: React.FC = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetEmailError('');
+
+    const emailResult = emailSchema.safeParse(resetEmail);
+    if (!emailResult.success) {
+      setResetEmailError(emailResult.error.errors[0].message);
+      return;
+    }
+
+    setIsResetting(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+
+      if (error) {
+        setResetEmailError(error.message);
+      } else {
+        toast.success('Password reset email sent! Check your inbox.');
+        setShowForgotPassword(false);
+        setResetEmail('');
+      }
+    } catch (error) {
+      setResetEmailError('Failed to send reset email. Please try again.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -136,110 +172,168 @@ const Auth: React.FC = () => {
 
       {/* Right side - Auth form */}
       <div className="lg:w-1/2 p-8 lg:p-16 flex items-center justify-center">
-        <Card className="w-full max-w-md border-border/50 shadow-lg">
-          <Tabs defaultValue="signin" className="w-full">
-            <CardHeader className="pb-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-            </CardHeader>
+        {showForgotPassword ? (
+          <Card className="w-full max-w-md border-border/50 shadow-lg">
+            <form onSubmit={handleForgotPassword}>
+              <CardHeader>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-fit -ml-2 mb-2"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmail('');
+                    setResetEmailError('');
+                  }}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Sign In
+                </Button>
+                <CardTitle>Reset Password</CardTitle>
+                <CardDescription>
+                  Enter your email address and we'll send you a link to reset your password.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={resetEmail}
+                    onChange={(e) => {
+                      setResetEmail(e.target.value);
+                      setResetEmailError('');
+                    }}
+                    className={resetEmailError ? 'border-destructive' : ''}
+                  />
+                  {resetEmailError && <p className="text-sm text-destructive">{resetEmailError}</p>}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" className="w-full" disabled={isResetting}>
+                  {isResetting ? 'Sending...' : 'Send Reset Link'}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        ) : (
+          <Card className="w-full max-w-md border-border/50 shadow-lg">
+            <Tabs defaultValue="signin" className="w-full">
+              <CardHeader className="pb-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signin">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
+              </CardHeader>
 
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn}>
-                <CardContent className="space-y-4">
-                  <CardTitle>Welcome back</CardTitle>
-                  <CardDescription>Sign in to access your dashboard</CardDescription>
+              <TabsContent value="signin">
+                <form onSubmit={handleSignIn}>
+                  <CardContent className="space-y-4">
+                    <CardTitle>Welcome back</CardTitle>
+                    <CardDescription>Sign in to access your dashboard</CardDescription>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email">Email</Label>
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setErrors(prev => ({ ...prev, email: undefined }));
+                        }}
+                        className={errors.email ? 'border-destructive' : ''}
+                      />
+                      {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="signin-password">Password</Label>
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotPassword(true)}
+                          className="text-sm text-primary hover:underline"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setErrors(prev => ({ ...prev, password: undefined }));
+                        }}
+                        className={errors.password ? 'border-destructive' : ''}
+                      />
+                      {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                    </div>
+                  </CardContent>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setErrors(prev => ({ ...prev, email: undefined }));
-                      }}
-                      className={errors.email ? 'border-destructive' : ''}
-                    />
-                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        setErrors(prev => ({ ...prev, password: undefined }));
-                      }}
-                      className={errors.password ? 'border-destructive' : ''}
-                    />
-                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-                  </div>
-                </CardContent>
-                
-                <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? 'Signing in...' : 'Sign In'}
-                  </Button>
-                </CardFooter>
-              </form>
-            </TabsContent>
+                  <CardFooter>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                  </CardFooter>
+                </form>
+              </TabsContent>
 
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp}>
-                <CardContent className="space-y-4">
-                  <CardTitle>Create an account</CardTitle>
-                  <CardDescription>Get started with your free account</CardDescription>
+              <TabsContent value="signup">
+                <form onSubmit={handleSignUp}>
+                  <CardContent className="space-y-4">
+                    <CardTitle>Create an account</CardTitle>
+                    <CardDescription>Get started with your free account</CardDescription>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setErrors(prev => ({ ...prev, email: undefined }));
+                        }}
+                        className={errors.email ? 'border-destructive' : ''}
+                      />
+                      {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setErrors(prev => ({ ...prev, password: undefined }));
+                        }}
+                        className={errors.password ? 'border-destructive' : ''}
+                      />
+                      {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                    </div>
+                  </CardContent>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setErrors(prev => ({ ...prev, email: undefined }));
-                      }}
-                      className={errors.email ? 'border-destructive' : ''}
-                    />
-                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        setErrors(prev => ({ ...prev, password: undefined }));
-                      }}
-                      className={errors.password ? 'border-destructive' : ''}
-                    />
-                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-                  </div>
-                </CardContent>
-                
-                <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating account...' : 'Create Account'}
-                  </Button>
-                </CardFooter>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </Card>
+                  <CardFooter>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? 'Creating account...' : 'Create Account'}
+                    </Button>
+                  </CardFooter>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </Card>
+        )}
       </div>
     </div>
   );
