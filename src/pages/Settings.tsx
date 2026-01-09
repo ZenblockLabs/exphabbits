@@ -22,7 +22,8 @@ import {
   BookOpen,
   RefreshCw,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Lock
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -94,8 +95,16 @@ const Settings: React.FC = () => {
   });
 
   const [confirmText, setConfirmText] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const resetDialog = () => {
+    setConfirmText('');
+    setPassword('');
+    setPasswordError('');
+  };
 
   const handleDeleteAccount = async () => {
     if (confirmText !== 'DELETE') {
@@ -103,17 +112,39 @@ const Settings: React.FC = () => {
       return;
     }
 
+    if (!password.trim()) {
+      setPasswordError('Password is required');
+      return;
+    }
+
+    if (!user?.email) {
+      toast.error('Unable to verify account');
+      return;
+    }
+
     setIsDeleting(true);
+    setPasswordError('');
+
     try {
-      // Delete user data from all tables first
-      if (user) {
-        await Promise.all([
-          supabase.from('habits').delete().eq('user_id', user.id),
-          supabase.from('expenses').delete().eq('user_id', user.id),
-          supabase.from('budgets').delete().eq('user_id', user.id),
-          supabase.from('recurring_expenses').delete().eq('user_id', user.id),
-        ]);
+      // Verify password by attempting to sign in
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: password,
+      });
+
+      if (authError) {
+        setPasswordError('Incorrect password');
+        setIsDeleting(false);
+        return;
       }
+
+      // Delete user data from all tables
+      await Promise.all([
+        supabase.from('habits').delete().eq('user_id', user.id),
+        supabase.from('expenses').delete().eq('user_id', user.id),
+        supabase.from('budgets').delete().eq('user_id', user.id),
+        supabase.from('recurring_expenses').delete().eq('user_id', user.id),
+      ]);
 
       // Sign out and notify user
       await signOut();
@@ -125,12 +156,11 @@ const Settings: React.FC = () => {
       toast.success('Account data deleted. Please contact support to complete account removal.');
       navigate('/auth');
     } catch (error) {
-      console.error('Error deleting account:', error);
       toast.error('Failed to delete account. Please try again.');
     } finally {
       setIsDeleting(false);
       setDialogOpen(false);
-      setConfirmText('');
+      resetDialog();
     }
   };
 
@@ -306,33 +336,55 @@ const Settings: React.FC = () => {
                     <AlertTriangle className="w-5 h-5" />
                     Delete Account
                   </AlertDialogTitle>
-                  <AlertDialogDescription className="space-y-3">
-                    <p>
-                      This action is <strong>irreversible</strong>. All your data including habits, 
-                      expenses, and budgets will be permanently deleted.
-                    </p>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-delete" className="text-sm font-medium">
-                        Type <span className="font-mono text-destructive">DELETE</span> to confirm
-                      </Label>
-                      <Input
-                        id="confirm-delete"
-                        value={confirmText}
-                        onChange={(e) => setConfirmText(e.target.value)}
-                        placeholder="Type DELETE"
-                        className="font-mono"
-                      />
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        This action is <strong className="text-foreground">irreversible</strong>. All your data including habits, 
+                        expenses, and budgets will be permanently deleted.
+                      </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password" className="text-sm font-medium flex items-center gap-2">
+                          <Lock className="w-4 h-4" />
+                          Enter your password
+                        </Label>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            setPasswordError('');
+                          }}
+                          placeholder="Your password"
+                          className={passwordError ? 'border-destructive' : ''}
+                        />
+                        {passwordError && (
+                          <p className="text-xs text-destructive">{passwordError}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-delete" className="text-sm font-medium">
+                          Type <span className="font-mono text-destructive">DELETE</span> to confirm
+                        </Label>
+                        <Input
+                          id="confirm-delete"
+                          value={confirmText}
+                          onChange={(e) => setConfirmText(e.target.value)}
+                          placeholder="Type DELETE"
+                          className="font-mono"
+                        />
+                      </div>
                     </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setConfirmText('')}>
+                  <AlertDialogCancel onClick={resetDialog}>
                     Cancel
                   </AlertDialogCancel>
                   <Button
                     variant="destructive"
                     onClick={handleDeleteAccount}
-                    disabled={confirmText !== 'DELETE' || isDeleting}
+                    disabled={confirmText !== 'DELETE' || !password.trim() || isDeleting}
                   >
                     {isDeleting ? 'Deleting...' : 'Delete Account'}
                   </Button>
