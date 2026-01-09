@@ -23,7 +23,8 @@ const onboardingSteps = [
     icon: Sparkles,
     title: "Welcome to Habex!",
     description: "Your all-in-one app for tracking habits and managing expenses. Let's take a quick tour of what you can do.",
-    color: "from-primary to-primary/60",
+    color: "from-primary to-secondary",
+    iconBg: "bg-gradient-to-br from-primary to-secondary",
     features: [
       "Track daily habits and build streaks",
       "Monitor and categorize expenses",
@@ -34,7 +35,8 @@ const onboardingSteps = [
     icon: LayoutDashboard,
     title: "Combined Dashboard",
     description: "Get a unified view of your habits and expenses at a glance. See your streaks, spending trends, and quick stats all in one place.",
-    color: "from-blue-500 to-blue-600",
+    color: "from-secondary to-accent",
+    iconBg: "bg-gradient-to-br from-secondary to-accent",
     features: [
       "Weekly habit completion trends",
       "Monthly expense overview",
@@ -45,7 +47,8 @@ const onboardingSteps = [
     icon: Target,
     title: "Habit Tracking",
     description: "Build positive habits with our intuitive tracking system. Set goals, track streaks, and celebrate your progress.",
-    color: "from-green-500 to-emerald-600",
+    color: "from-primary to-primary/70",
+    iconBg: "bg-gradient-to-br from-primary to-primary/70",
     features: [
       "Daily habit check-ins",
       "Streak tracking with best records",
@@ -56,7 +59,8 @@ const onboardingSteps = [
     icon: Flame,
     title: "21-Day Challenge",
     description: "Science says it takes 21 days to form a habit. Join our challenge mode to build lasting habits with extra motivation.",
-    color: "from-orange-500 to-red-500",
+    color: "from-accent to-secondary",
+    iconBg: "bg-gradient-to-br from-accent to-secondary",
     features: [
       "Structured habit building",
       "Progress visualization",
@@ -67,7 +71,8 @@ const onboardingSteps = [
     icon: Wallet,
     title: "Expense Management",
     description: "Track your spending across categories, set budgets, and manage recurring expenses with ease.",
-    color: "from-purple-500 to-violet-600",
+    color: "from-secondary to-primary",
+    iconBg: "bg-gradient-to-br from-secondary to-primary",
     features: [
       "Category-based tracking",
       "Recurring expense automation",
@@ -78,7 +83,8 @@ const onboardingSteps = [
     icon: CheckCircle2,
     title: "You're All Set!",
     description: "You're ready to start your journey with Habex. Build better habits, manage your money, and track your progress.",
-    color: "from-primary to-secondary",
+    color: "from-primary to-accent",
+    iconBg: "bg-gradient-to-br from-primary via-secondary to-accent",
     features: [
       "Start tracking today",
       "Set your first habit",
@@ -144,10 +150,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
           >
             {/* Icon */}
             <div className={cn(
-              "w-20 h-20 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br",
-              step.color
+              "w-20 h-20 rounded-2xl flex items-center justify-center mb-6 shadow-lg",
+              step.iconBg
             )}>
-              <step.icon className="w-10 h-10 text-white" />
+              <step.icon className="w-10 h-10 text-primary-foreground" />
             </div>
 
             {/* Title */}
@@ -170,11 +176,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
                   transition={{ delay: 0.1 * (index + 1) }}
                   className="flex items-center gap-3 text-sm"
                 >
-                  <div className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br",
-                    step.color
-                  )}>
-                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center bg-primary/20">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
                   </div>
                   <span className="text-foreground">{feature}</span>
                 </motion.li>
@@ -212,10 +215,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
               </Button>
               <Button
                 onClick={handleNext}
-                className={cn(
-                  "flex-1 bg-gradient-to-r",
-                  step.color
-                )}
+                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground"
               >
                 {isLastStep ? "Get Started" : "Next"}
                 {!isLastStep && <ChevronRight className="w-4 h-4 ml-2" />}
