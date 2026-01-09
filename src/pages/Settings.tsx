@@ -23,7 +23,8 @@ import {
   RefreshCw,
   Trash2,
   AlertTriangle,
-  Lock
+  Lock,
+  KeyRound
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -100,10 +101,84 @@ const Settings: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordChangeError, setPasswordChangeError] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+
   const resetDialog = () => {
     setConfirmText('');
     setPassword('');
     setPasswordError('');
+  };
+
+  const resetPasswordDialog = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setPasswordChangeError('');
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordChangeError('');
+
+    if (!currentPassword.trim()) {
+      setPasswordChangeError('Current password is required');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordChangeError('New password must be at least 6 characters');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordChangeError('New passwords do not match');
+      return;
+    }
+
+    if (!user?.email) {
+      toast.error('Unable to verify account');
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      // Verify current password
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (authError) {
+        setPasswordChangeError('Current password is incorrect');
+        setIsChangingPassword(false);
+        return;
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        setPasswordChangeError(updateError.message);
+        setIsChangingPassword(false);
+        return;
+      }
+
+      toast.success('Password changed successfully');
+      setPasswordDialogOpen(false);
+      resetPasswordDialog();
+    } catch (error) {
+      setPasswordChangeError('Failed to change password. Please try again.');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -303,6 +378,112 @@ const Settings: React.FC = () => {
               </div>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* Security Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <KeyRound className="w-5 h-5" />
+            Security
+          </CardTitle>
+          <CardDescription>Manage your account security</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+            <div>
+              <p className="font-medium">Change Password</p>
+              <p className="text-xs text-muted-foreground">
+                Update your account password
+              </p>
+            </div>
+            <AlertDialog open={passwordDialogOpen} onOpenChange={(open) => {
+              setPasswordDialogOpen(open);
+              if (!open) resetPasswordDialog();
+            }}>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Lock className="w-4 h-4 mr-2" />
+                  Change
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <KeyRound className="w-5 h-5" />
+                    Change Password
+                  </AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Enter your current password and choose a new one.
+                      </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="current-password" className="text-sm font-medium">
+                          Current Password
+                        </Label>
+                        <Input
+                          id="current-password"
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => {
+                            setCurrentPassword(e.target.value);
+                            setPasswordChangeError('');
+                          }}
+                          placeholder="Enter current password"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password" className="text-sm font-medium">
+                          New Password
+                        </Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => {
+                            setNewPassword(e.target.value);
+                            setPasswordChangeError('');
+                          }}
+                          placeholder="Enter new password (min 6 characters)"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-new-password" className="text-sm font-medium">
+                          Confirm New Password
+                        </Label>
+                        <Input
+                          id="confirm-new-password"
+                          type="password"
+                          value={confirmNewPassword}
+                          onChange={(e) => {
+                            setConfirmNewPassword(e.target.value);
+                            setPasswordChangeError('');
+                          }}
+                          placeholder="Confirm new password"
+                        />
+                      </div>
+                      {passwordChangeError && (
+                        <p className="text-sm text-destructive">{passwordChangeError}</p>
+                      )}
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={resetPasswordDialog}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={!currentPassword.trim() || !newPassword.trim() || !confirmNewPassword.trim() || isChangingPassword}
+                  >
+                    {isChangingPassword ? 'Changing...' : 'Change Password'}
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
 
