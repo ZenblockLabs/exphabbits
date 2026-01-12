@@ -24,7 +24,9 @@ import {
   Trash2,
   AlertTriangle,
   Lock,
-  KeyRound
+  KeyRound,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -47,6 +49,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { BADGE_SOUND_ENABLED_KEY } from '@/hooks/useBadgeSound';
 
 const VISIBILITY_STORAGE_KEY = 'sidebar-visibility-settings';
 const COLLAPSED_STORAGE_KEY = 'sidebar-collapsed';
@@ -109,6 +112,17 @@ const Settings: React.FC = () => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
+  // Badge sound setting
+  const [badgeSoundEnabled, setBadgeSoundEnabled] = useState(() => {
+    const saved = localStorage.getItem(BADGE_SOUND_ENABLED_KEY);
+    return saved !== 'false'; // Default to true
+  });
+
+  const handleBadgeSoundChange = (enabled: boolean) => {
+    setBadgeSoundEnabled(enabled);
+    localStorage.setItem(BADGE_SOUND_ENABLED_KEY, String(enabled));
+    window.dispatchEvent(new Event('storage'));
+  };
   const resetDialog = () => {
     setConfirmText('');
     setPassword('');
@@ -309,7 +323,7 @@ const Settings: React.FC = () => {
           </CardTitle>
           <CardDescription>Configure sidebar behavior</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
             <Label htmlFor="collapse-sidebar" className="flex items-center gap-3 text-sm cursor-pointer">
               {collapsed ? (
@@ -326,6 +340,37 @@ const Settings: React.FC = () => {
               id="collapse-sidebar"
               checked={collapsed}
               onCheckedChange={handleCollapseChange}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sound Settings Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Volume2 className="w-5 h-5" />
+            Sound
+          </CardTitle>
+          <CardDescription>Configure sound effects</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+            <Label htmlFor="badge-sound" className="flex items-center gap-3 text-sm cursor-pointer">
+              {badgeSoundEnabled ? (
+                <Volume2 className="w-5 h-5 text-muted-foreground" />
+              ) : (
+                <VolumeX className="w-5 h-5 text-muted-foreground" />
+              )}
+              <div>
+                <p className="font-medium">Badge unlock sound</p>
+                <p className="text-xs text-muted-foreground">Play a sound when you unlock a new badge</p>
+              </div>
+            </Label>
+            <Switch
+              id="badge-sound"
+              checked={badgeSoundEnabled}
+              onCheckedChange={handleBadgeSoundChange}
             />
           </div>
         </CardContent>

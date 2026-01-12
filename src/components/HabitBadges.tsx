@@ -20,6 +20,8 @@ import {
   TooltipTrigger 
 } from '@/components/ui/tooltip';
 import confetti from 'canvas-confetti';
+import { useBadgeSound } from '@/hooks/useBadgeSound';
+import { toast } from 'sonner';
 
 interface Badge {
   id: string;
@@ -40,7 +42,7 @@ const UNLOCKED_BADGES_KEY = 'habex-unlocked-badges';
 const HabitBadges: React.FC<HabitBadgesProps> = ({ habits, getCurrentStreak }) => {
   const [newlyUnlocked, setNewlyUnlocked] = useState<string[]>([]);
   const hasTriggeredConfetti = useRef(false);
-
+  const { playBadgeUnlockSound } = useBadgeSound();
   const getBadges = (): Badge[] => {
     const maxCurrentStreak = Math.max(...habits.map(h => getCurrentStreak(h)), 0);
     const maxBestStreak = Math.max(...habits.map(h => h.bestStreak), 0);
@@ -140,6 +142,20 @@ const HabitBadges: React.FC<HabitBadgesProps> = ({ habits, getCurrentStreak }) =
     if (newBadges.length > 0 && !hasTriggeredConfetti.current) {
       setNewlyUnlocked(newBadges);
       hasTriggeredConfetti.current = true;
+
+      // Play celebration sound
+      playBadgeUnlockSound();
+
+      // Show toast notification for each new badge
+      const newBadgeDetails = badges.filter(b => newBadges.includes(b.id));
+      newBadgeDetails.forEach((badge, index) => {
+        setTimeout(() => {
+          toast.success(`🎉 Badge Unlocked: ${badge.name}!`, {
+            description: badge.description,
+            duration: 5000,
+          });
+        }, index * 500); // Stagger toasts if multiple badges
+      });
 
       // Trigger confetti celebration
       const duration = 3000;
