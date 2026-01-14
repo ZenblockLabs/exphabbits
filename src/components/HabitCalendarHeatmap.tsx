@@ -1,18 +1,21 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus, CalendarDays, ArrowUp, ArrowDown, X, CheckCircle2, XCircle, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, CalendarDays, ArrowUp, ArrowDown, X, CheckCircle2, XCircle, Calendar, Flame, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface Habit {
   id: string;
   name: string;
   icon: string;
   completedDates: string[];
+  category?: string;
 }
 
 interface HabitCalendarHeatmapProps {
@@ -27,16 +30,29 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
   
   const [selectedDay, setSelectedDay] = useState<{ date: number; dateStr: string; completed: number; rate: number } | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'year'>('month');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
+  // Get unique categories from habits
+  const categories = useMemo(() => {
+    const cats = [...new Set(habits.map(h => h.category).filter(Boolean))];
+    return cats.sort();
+  }, [habits]);
+
+  // Filter habits by category
+  const filteredHabits = useMemo(() => {
+    if (selectedCategory === 'all') return habits;
+    return habits.filter(h => h.category === selectedCategory);
+  }, [habits, selectedCategory]);
+
   // Generate calendar data for current month
   const calendarData = useMemo(() => {
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-    const totalHabits = habits.length;
+    const totalHabits = filteredHabits.length;
 
     const days: { date: number; dateStr: string; completed: number; rate: number; isFuture: boolean; isEmpty: boolean }[] = [];
 
@@ -48,7 +64,7 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
     // Add actual days
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const completed = habits.filter(h => h.completedDates.includes(dateStr)).length;
+      const completed = filteredHabits.filter(h => h.completedDates.includes(dateStr)).length;
       const rate = totalHabits > 0 ? Math.round((completed / totalHabits) * 100) : 0;
       const isFuture = day > currentDay;
 
@@ -56,12 +72,12 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
     }
 
     return days;
-  }, [habits, currentMonth, currentYear, currentDay]);
+  }, [filteredHabits, currentMonth, currentYear, currentDay]);
 
-  // Generate yearly heatmap data (GitHub style - last 12 months)
+  // Generate yearly heatmap data (GitHub style - last 12 months) with streak info
   const yearlyData = useMemo(() => {
-    const totalHabits = habits.length;
-    const weeks: { days: { date: Date; dateStr: string; completed: number; rate: number; isFuture: boolean }[] }[] = [];
+    const totalHabits = filteredHabits.length;
+    const weeks: { days: { date: Date; dateStr: string; completed: number; rate: number; isFuture: boolean; isStreakDay: boolean; streakLength: number }[] }[] = [];
     
     // Start from 52 weeks ago
     const startDate = new Date();
@@ -72,33 +88,60 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // First pass: collect all day data
+    const allDays: { date: Date; dateStr: string; completed: number; rate: number; isFuture: boolean }[] = [];
     let currentDate = new Date(startDate);
     
-    for (let week = 0; week < 53; week++) {
-      const weekDays: { date: Date; dateStr: string; completed: number; rate: number; isFuture: boolean }[] = [];
+    for (let i = 0; i < 53 * 7; i++) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const completed = filteredHabits.filter(h => h.completedDates.includes(dateStr)).length;
+      const rate = totalHabits > 0 ? Math.round((completed / totalHabits) * 100) : 0;
+      const isFuture = currentDate > today;
       
-      for (let day = 0; day < 7; day++) {
-        const dateStr = currentDate.toISOString().split('T')[0];
-        const completed = habits.filter(h => h.completedDates.includes(dateStr)).length;
-        const rate = totalHabits > 0 ? Math.round((completed / totalHabits) * 100) : 0;
-        const isFuture = currentDate > today;
-        
-        weekDays.push({
-          date: new Date(currentDate),
-          dateStr,
-          completed,
-          rate,
-          isFuture
-        });
-        
-        currentDate.setDate(currentDate.getDate() + 1);
+      allDays.push({
+        date: new Date(currentDate),
+        dateStr,
+        completed,
+        rate,
+        isFuture
+      });
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Second pass: calculate streaks (consecutive days with >= 50% completion)
+    const daysWithStreaks: { date: Date; dateStr: string; completed: number; rate: number; isFuture: boolean; isStreakDay: boolean; streakLength: number }[] = [];
+    
+    for (let i = 0; i < allDays.length; i++) {
+      const day = allDays[i];
+      const isCompletionDay = day.rate >= 50 && !day.isFuture;
+      
+      // Calculate streak length at this position
+      let streakLength = 0;
+      if (isCompletionDay) {
+        // Count consecutive days backwards
+        let j = i;
+        while (j >= 0 && allDays[j].rate >= 50 && !allDays[j].isFuture) {
+          streakLength++;
+          j--;
+        }
       }
       
+      daysWithStreaks.push({
+        ...day,
+        isStreakDay: isCompletionDay && streakLength >= 3, // Mark as streak if 3+ consecutive days
+        streakLength
+      });
+    }
+    
+    // Group into weeks
+    for (let week = 0; week < 53; week++) {
+      const weekDays = daysWithStreaks.slice(week * 7, (week + 1) * 7);
       weeks.push({ days: weekDays });
     }
     
     return weeks;
-  }, [habits]);
+  }, [filteredHabits]);
 
   // Get month labels for yearly view
   const monthLabels = useMemo(() => {
@@ -203,22 +246,47 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
         >
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <CalendarDays className="h-5 w-5 text-primary" />
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <CalendarDays className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Habit Heatmap</CardTitle>
+                      <CardDescription>Click any day to see details</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">Habit Heatmap</CardTitle>
-                    <CardDescription>Click any day to see details</CardDescription>
-                  </div>
+                  <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'month' | 'year')}>
+                    <TabsList className="h-8">
+                      <TabsTrigger value="month" className="text-xs px-3">Month</TabsTrigger>
+                      <TabsTrigger value="year" className="text-xs px-3">Year</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </div>
-                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'month' | 'year')}>
-                  <TabsList className="h-8">
-                    <TabsTrigger value="month" className="text-xs px-3">Month</TabsTrigger>
-                    <TabsTrigger value="year" className="text-xs px-3">Year</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                
+                {/* Category Filter */}
+                {categories.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                      <SelectTrigger className="w-[180px] h-8 text-xs">
+                        <SelectValue placeholder="All Categories" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categories.map(cat => (
+                          <SelectItem key={cat} value={cat || ''}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedCategory !== 'all' && (
+                      <Badge variant="secondary" className="text-xs">
+                        {filteredHabits.length} habit{filteredHabits.length !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -326,10 +394,14 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
                                         <button
                                           onClick={() => handleYearDayClick(day)}
                                           disabled={day.isFuture}
-                                          className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm transition-all ${
+                                          className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm transition-all relative ${
                                             getHeatmapColor(day.rate, day.isFuture)
-                                          } ${!day.isFuture ? 'cursor-pointer hover:ring-1 hover:ring-primary/50' : 'cursor-default'}`}
-                                        />
+                                          } ${day.isStreakDay ? 'ring-1 ring-orange-400 ring-offset-1 ring-offset-background' : ''} ${!day.isFuture ? 'cursor-pointer hover:ring-1 hover:ring-primary/50' : 'cursor-default'}`}
+                                        >
+                                          {day.isStreakDay && day.streakLength >= 7 && (
+                                            <Flame className="absolute -top-1 -right-1 h-2 w-2 text-orange-500 fill-orange-400" />
+                                          )}
+                                        </button>
                                       </TooltipTrigger>
                                       {!day.isFuture && (
                                         <TooltipContent>
@@ -337,8 +409,14 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
                                             {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                           </p>
                                           <p className="text-xs text-muted-foreground">
-                                            {day.completed}/{habits.length} habits ({day.rate}%)
+                                            {day.completed}/{filteredHabits.length} habits ({day.rate}%)
                                           </p>
+                                          {day.isStreakDay && (
+                                            <p className="text-xs text-orange-500 flex items-center gap-1 mt-1">
+                                              <Flame className="h-3 w-3" />
+                                              {day.streakLength} day streak!
+                                            </p>
+                                          )}
                                         </TooltipContent>
                                       )}
                                     </Tooltip>
@@ -354,17 +432,26 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
               </AnimatePresence>
 
               {/* Legend */}
-              <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
-                <span>Less</span>
-                <div className="flex gap-1">
-                  <div className="w-3 h-3 rounded-sm bg-muted/50" />
-                  <div className="w-3 h-3 rounded-sm bg-red-500/30" />
-                  <div className="w-3 h-3 rounded-sm bg-orange-500/40" />
-                  <div className="w-3 h-3 rounded-sm bg-amber-500/50" />
-                  <div className="w-3 h-3 rounded-sm bg-green-500/60" />
-                  <div className="w-3 h-3 rounded-sm bg-green-500" />
+              <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span>Less</span>
+                  <div className="flex gap-1">
+                    <div className="w-3 h-3 rounded-sm bg-muted/50" />
+                    <div className="w-3 h-3 rounded-sm bg-red-500/30" />
+                    <div className="w-3 h-3 rounded-sm bg-orange-500/40" />
+                    <div className="w-3 h-3 rounded-sm bg-amber-500/50" />
+                    <div className="w-3 h-3 rounded-sm bg-green-500/60" />
+                    <div className="w-3 h-3 rounded-sm bg-green-500" />
+                  </div>
+                  <span>More</span>
                 </div>
-                <span>More</span>
+                {viewMode === 'year' && (
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-sm bg-green-500/60 ring-1 ring-orange-400" />
+                    <Flame className="h-3 w-3 text-orange-500" />
+                    <span>Streak (3+ days)</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
