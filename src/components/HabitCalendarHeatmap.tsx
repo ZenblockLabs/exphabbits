@@ -290,39 +290,34 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
                       Last 12 Months
                     </div>
                     
-                    <ScrollArea className="w-full">
-                      <div className="min-w-[700px] pb-4">
+                    <div className="w-full">
                         {/* Month labels */}
-                        <div className="flex mb-1 pl-6">
+                        <div className="flex justify-between mb-2 pl-8">
                           {monthLabels.map((label, i) => (
                             <div 
                               key={i} 
-                              className="text-xs text-muted-foreground"
-                              style={{ 
-                                position: 'absolute',
-                                left: `${label.week * 14 + 24}px`
-                              }}
+                              className="text-xs text-muted-foreground flex-shrink-0"
                             >
                               {label.month}
                             </div>
                           ))}
                         </div>
                         
-                        <div className="flex mt-6">
+                        <div className="flex w-full">
                           {/* Day labels */}
-                          <div className="flex flex-col gap-[2px] mr-1 text-xs text-muted-foreground">
-                            <div className="h-[12px]"></div>
-                            <div className="h-[12px] flex items-center">M</div>
-                            <div className="h-[12px]"></div>
-                            <div className="h-[12px] flex items-center">W</div>
-                            <div className="h-[12px]"></div>
-                            <div className="h-[12px] flex items-center">F</div>
-                            <div className="h-[12px]"></div>
+                          <div className="flex flex-col justify-between mr-2 text-xs text-muted-foreground flex-shrink-0 py-[2px]">
+                            <div className="h-4 flex items-center"></div>
+                            <div className="h-4 flex items-center">M</div>
+                            <div className="h-4 flex items-center"></div>
+                            <div className="h-4 flex items-center">W</div>
+                            <div className="h-4 flex items-center"></div>
+                            <div className="h-4 flex items-center">F</div>
+                            <div className="h-4 flex items-center"></div>
                           </div>
                           
-                          {/* Weeks grid */}
+                          {/* Weeks grid - flex to fill width */}
                           <TooltipProvider>
-                            <div className="flex gap-[2px]">
+                            <div className="flex flex-1 justify-between gap-[1px]">
                               {yearlyData.map((week, weekIndex) => (
                                 <div key={weekIndex} className="flex flex-col gap-[2px]">
                                   {week.days.map((day, dayIndex) => (
@@ -331,7 +326,7 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
                                         <button
                                           onClick={() => handleYearDayClick(day)}
                                           disabled={day.isFuture}
-                                          className={`w-[12px] h-[12px] rounded-sm transition-all ${
+                                          className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm transition-all ${
                                             getHeatmapColor(day.rate, day.isFuture)
                                           } ${!day.isFuture ? 'cursor-pointer hover:ring-1 hover:ring-primary/50' : 'cursor-default'}`}
                                         />
@@ -354,7 +349,6 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
                           </TooltipProvider>
                         </div>
                       </div>
-                    </ScrollArea>
                   </motion.div>
                 )}
               </AnimatePresence>
