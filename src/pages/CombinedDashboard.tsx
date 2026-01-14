@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import StreakLeaderboard from '@/components/StreakLeaderboard';
 import HabitBadges from '@/components/HabitBadges';
+import HabitCalendarHeatmap from '@/components/HabitCalendarHeatmap';
 import { 
   Heart, Dumbbell, Brain, Coffee, Book, Music, Bike, Moon, Sun, Droplets,
   Utensils, Pill, Cigarette, Wine, Timer, Pencil, Code, Gamepad2, Camera, Palette,
@@ -500,6 +501,9 @@ const CombinedDashboard: React.FC = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Calendar Heatmap and Month Comparison */}
+      {habits.length > 0 && <HabitCalendarHeatmap habits={habits} />}
 
       {/* Trend Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
