@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Target, TrendingUp, Fuel, DollarSign, Flame, CheckCircle2, Calendar, BarChart3 } from 'lucide-react';
+import { Wallet, Target, TrendingUp, Fuel, DollarSign, Flame, CheckCircle2, Calendar, BarChart3, Crown, CalendarDays } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { useHabits } from '@/contexts/HabitContext';
 import { calculateYearTotals } from '@/data/expenseData';
@@ -125,6 +125,87 @@ const CombinedDashboard: React.FC = () => {
     }
     
     return data;
+  }, [habits]);
+
+  // Top daily habits - habits with highest completion rate
+  const topDailyHabits = useMemo(() => {
+    return [...habits]
+      .map(habit => ({
+        ...habit,
+        completionRate: habit.completedDates.length > 0 
+          ? Math.round((habit.completedDates.length / 30) * 100) // Last 30 days approx
+          : 0,
+        streak: getCurrentStreak(habit),
+      }))
+      .sort((a, b) => b.completionRate - a.completionRate)
+      .slice(0, 5);
+  }, [habits]);
+
+  // Monthly habit progress data
+  const monthlyHabitProgress = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const currentDay = now.getDate();
+    
+    // Calculate completion for each week of the month
+    const weeks: { week: string; completed: number; total: number; rate: number }[] = [];
+    
+    for (let weekNum = 0; weekNum < 5; weekNum++) {
+      const startDay = weekNum * 7 + 1;
+      const endDay = Math.min((weekNum + 1) * 7, daysInMonth);
+      
+      if (startDay > daysInMonth) break;
+      
+      let weekCompleted = 0;
+      let weekTotal = 0;
+      
+      for (let day = startDay; day <= endDay && day <= currentDay; day++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dailyCompleted = habits.filter(h => h.completedDates.includes(dateStr)).length;
+        weekCompleted += dailyCompleted;
+        weekTotal += habits.length;
+      }
+      
+      weeks.push({
+        week: `Week ${weekNum + 1}`,
+        completed: weekCompleted,
+        total: weekTotal,
+        rate: weekTotal > 0 ? Math.round((weekCompleted / weekTotal) * 100) : 0,
+      });
+    }
+    
+    return weeks;
+  }, [habits]);
+
+  // Monthly overview stats
+  const monthlyStats = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const currentDay = now.getDate();
+    
+    let totalCompletions = 0;
+    let totalPossible = 0;
+    
+    for (let day = 1; day <= currentDay; day++) {
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dailyCompleted = habits.filter(h => h.completedDates.includes(dateStr)).length;
+      totalCompletions += dailyCompleted;
+      totalPossible += habits.length;
+    }
+    
+    const completionRate = totalPossible > 0 ? Math.round((totalCompletions / totalPossible) * 100) : 0;
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    return {
+      month: monthNames[currentMonth],
+      completions: totalCompletions,
+      possible: totalPossible,
+      rate: completionRate,
+      daysCompleted: currentDay,
+    };
   }, [habits]);
 
   return (
@@ -296,6 +377,126 @@ const CombinedDashboard: React.FC = () => {
             className="lg:col-span-2"
           >
             <HabitBadges habits={habits} getCurrentStreak={getCurrentStreak} />
+          </motion.div>
+        )}
+
+        {/* Top Daily Habits */}
+        {topDailyHabits.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28 }}
+          >
+            <Card className="h-full">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/10">
+                    <Crown className="h-5 w-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Top Daily Habits</CardTitle>
+                    <CardDescription>Most consistent habits</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {topDailyHabits.map((habit, index) => {
+                  const IconComponent = iconMap[habit.icon] || Target;
+                  return (
+                    <div
+                      key={habit.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          index === 0 ? 'bg-amber-500/20 text-amber-500' :
+                          index === 1 ? 'bg-gray-400/20 text-gray-500' :
+                          index === 2 ? 'bg-amber-700/20 text-amber-700' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <IconComponent className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium truncate">{habit.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {habit.streak > 0 && (
+                          <div className="flex items-center gap-1 text-orange-500 text-xs">
+                            <Flame className="h-3 w-3" />
+                            <span>{habit.streak}</span>
+                          </div>
+                        )}
+                        <div className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                          {habit.completionRate}%
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Monthly Habit Progress Overview */}
+        {habits.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="h-full">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-500/10">
+                    <CalendarDays className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Monthly Progress</CardTitle>
+                    <CardDescription>{monthlyStats.month} Overview</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Overall monthly stats */}
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Overall Completion</span>
+                    <span className="text-sm text-muted-foreground">
+                      {monthlyStats.completions}/{monthlyStats.possible} completions
+                    </span>
+                  </div>
+                  <Progress value={monthlyStats.rate} className="h-2 mb-2" />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{monthlyStats.rate}% complete</span>
+                    <span>Day {monthlyStats.daysCompleted}</span>
+                  </div>
+                </div>
+
+                {/* Weekly breakdown */}
+                <div className="space-y-2">
+                  <span className="text-sm font-medium">Weekly Breakdown</span>
+                  <div className="space-y-2">
+                    {monthlyHabitProgress.map((week, index) => (
+                      <div key={week.week} className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground w-14">{week.week}</span>
+                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all ${
+                              week.rate >= 80 ? 'bg-green-500' :
+                              week.rate >= 50 ? 'bg-amber-500' :
+                              week.rate > 0 ? 'bg-orange-500' : 'bg-muted'
+                            }`}
+                            style={{ width: `${week.rate}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-medium w-10 text-right">{week.rate}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
       </div>
