@@ -1,12 +1,17 @@
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus, CalendarDays, ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TrendingUp, TrendingDown, Minus, CalendarDays, ArrowUp, ArrowDown, X, CheckCircle2, XCircle, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Habit {
   id: string;
   name: string;
+  icon: string;
   completedDates: string[];
 }
 
@@ -19,6 +24,13 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
   const currentDay = now.getDate();
+  
+  const [selectedDay, setSelectedDay] = useState<{ date: number; dateStr: string; completed: number; rate: number } | null>(null);
+  const [viewMode, setViewMode] = useState<'month' | 'year'>('month');
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   // Generate calendar data for current month
   const calendarData = useMemo(() => {
@@ -45,6 +57,66 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
 
     return days;
   }, [habits, currentMonth, currentYear, currentDay]);
+
+  // Generate yearly heatmap data (GitHub style - last 12 months)
+  const yearlyData = useMemo(() => {
+    const totalHabits = habits.length;
+    const weeks: { days: { date: Date; dateStr: string; completed: number; rate: number; isFuture: boolean }[] }[] = [];
+    
+    // Start from 52 weeks ago
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 364);
+    // Align to Sunday
+    startDate.setDate(startDate.getDate() - startDate.getDay());
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let currentDate = new Date(startDate);
+    
+    for (let week = 0; week < 53; week++) {
+      const weekDays: { date: Date; dateStr: string; completed: number; rate: number; isFuture: boolean }[] = [];
+      
+      for (let day = 0; day < 7; day++) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const completed = habits.filter(h => h.completedDates.includes(dateStr)).length;
+        const rate = totalHabits > 0 ? Math.round((completed / totalHabits) * 100) : 0;
+        const isFuture = currentDate > today;
+        
+        weekDays.push({
+          date: new Date(currentDate),
+          dateStr,
+          completed,
+          rate,
+          isFuture
+        });
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      weeks.push({ days: weekDays });
+    }
+    
+    return weeks;
+  }, [habits]);
+
+  // Get month labels for yearly view
+  const monthLabels = useMemo(() => {
+    const labels: { month: string; week: number }[] = [];
+    let lastMonth = -1;
+    
+    yearlyData.forEach((week, weekIndex) => {
+      const firstDayOfWeek = week.days[0].date;
+      const month = firstDayOfWeek.getMonth();
+      
+      if (month !== lastMonth) {
+        labels.push({ month: shortMonthNames[month], week: weekIndex });
+        lastMonth = month;
+      }
+    });
+    
+    return labels;
+  }, [yearlyData]);
 
   // Calculate month-over-month comparison
   const monthComparison = useMemo(() => {
@@ -82,8 +154,18 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
     return { current: currentRate, previous: prevRate, change, trend };
   }, [habits, currentMonth, currentYear, currentDay]);
 
+  // Get habits for selected day
+  const selectedDayHabits = useMemo(() => {
+    if (!selectedDay) return { completed: [], incomplete: [] };
+    
+    const completed = habits.filter(h => h.completedDates.includes(selectedDay.dateStr));
+    const incomplete = habits.filter(h => !h.completedDates.includes(selectedDay.dateStr));
+    
+    return { completed, incomplete };
+  }, [selectedDay, habits]);
+
   // Get color based on completion rate
-  const getHeatmapColor = (rate: number, isFuture: boolean, isEmpty: boolean) => {
+  const getHeatmapColor = (rate: number, isFuture: boolean, isEmpty?: boolean) => {
     if (isEmpty) return 'bg-transparent';
     if (isFuture) return 'bg-muted/30';
     if (rate === 0) return 'bg-muted/50';
@@ -94,198 +176,398 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
     return 'bg-green-500';
   };
 
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const handleDayClick = (day: { date: number; dateStr: string; completed: number; rate: number; isFuture: boolean; isEmpty: boolean }) => {
+    if (!day.isEmpty && !day.isFuture) {
+      setSelectedDay({ date: day.date, dateStr: day.dateStr, completed: day.completed, rate: day.rate });
+    }
+  };
+
+  const handleYearDayClick = (day: { date: Date; dateStr: string; completed: number; rate: number; isFuture: boolean }) => {
+    if (!day.isFuture) {
+      setSelectedDay({ date: day.date.getDate(), dateStr: day.dateStr, completed: day.completed, rate: day.rate });
+    }
+  };
 
   const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
 
   if (habits.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Calendar Heatmap */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-      >
-        <Card className="h-full">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <CalendarDays className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">Habit Heatmap</CardTitle>
-                <CardDescription>{monthNames[currentMonth]} {currentYear}</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Day labels */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {dayLabels.map((day, i) => (
-                <div key={i} className="text-center text-xs text-muted-foreground font-medium">
-                  {day}
+    <>
+      <div className="space-y-6">
+        {/* Heatmap Card with View Toggle */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <CalendarDays className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Habit Heatmap</CardTitle>
+                    <CardDescription>Click any day to see details</CardDescription>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'month' | 'year')}>
+                  <TabsList className="h-8">
+                    <TabsTrigger value="month" className="text-xs px-3">Month</TabsTrigger>
+                    <TabsTrigger value="year" className="text-xs px-3">Year</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <AnimatePresence mode="wait">
+                {viewMode === 'month' ? (
+                  <motion.div
+                    key="month"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {/* Month View */}
+                    <div className="text-center text-sm font-medium text-muted-foreground mb-3">
+                      {monthNames[currentMonth]} {currentYear}
+                    </div>
+                    
+                    {/* Day labels */}
+                    <div className="grid grid-cols-7 gap-1 mb-2">
+                      {dayLabels.map((day, i) => (
+                        <div key={i} className="text-center text-xs text-muted-foreground font-medium">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
 
-            {/* Calendar grid */}
-            <TooltipProvider>
-              <div className="grid grid-cols-7 gap-1">
-                {calendarData.map((day, i) => (
-                  <Tooltip key={i}>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={`aspect-square rounded-md flex items-center justify-center text-xs font-medium transition-all cursor-default ${
-                          getHeatmapColor(day.rate, day.isFuture, day.isEmpty)
-                        } ${day.date === currentDay ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''} ${
-                          !day.isEmpty && !day.isFuture && day.rate === 100 ? 'text-white' : 'text-foreground/70'
-                        }`}
-                      >
-                        {day.isEmpty ? '' : day.date}
+                    {/* Calendar grid */}
+                    <TooltipProvider>
+                      <div className="grid grid-cols-7 gap-1">
+                        {calendarData.map((day, i) => (
+                          <Tooltip key={i}>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => handleDayClick(day)}
+                                disabled={day.isEmpty || day.isFuture}
+                                className={`aspect-square rounded-md flex items-center justify-center text-xs font-medium transition-all ${
+                                  getHeatmapColor(day.rate, day.isFuture, day.isEmpty)
+                                } ${day.date === currentDay ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''} ${
+                                  !day.isEmpty && !day.isFuture && day.rate === 100 ? 'text-white' : 'text-foreground/70'
+                                } ${!day.isEmpty && !day.isFuture ? 'cursor-pointer hover:ring-2 hover:ring-primary/50' : 'cursor-default'}`}
+                              >
+                                {day.isEmpty ? '' : day.date}
+                              </button>
+                            </TooltipTrigger>
+                            {!day.isEmpty && !day.isFuture && (
+                              <TooltipContent>
+                                <p className="font-medium">{monthNames[currentMonth]} {day.date}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {day.completed}/{habits.length} habits ({day.rate}%)
+                                </p>
+                                <p className="text-xs text-primary mt-1">Click to view details</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        ))}
                       </div>
-                    </TooltipTrigger>
-                    {!day.isEmpty && !day.isFuture && (
-                      <TooltipContent>
-                        <p className="font-medium">{monthNames[currentMonth]} {day.date}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {day.completed}/{habits.length} habits ({day.rate}%)
-                        </p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                ))}
-              </div>
-            </TooltipProvider>
+                    </TooltipProvider>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="year"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {/* Yearly GitHub-style View */}
+                    <div className="text-center text-sm font-medium text-muted-foreground mb-3">
+                      Last 12 Months
+                    </div>
+                    
+                    <ScrollArea className="w-full">
+                      <div className="min-w-[700px] pb-4">
+                        {/* Month labels */}
+                        <div className="flex mb-1 pl-6">
+                          {monthLabels.map((label, i) => (
+                            <div 
+                              key={i} 
+                              className="text-xs text-muted-foreground"
+                              style={{ 
+                                position: 'absolute',
+                                left: `${label.week * 14 + 24}px`
+                              }}
+                            >
+                              {label.month}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="flex mt-6">
+                          {/* Day labels */}
+                          <div className="flex flex-col gap-[2px] mr-1 text-xs text-muted-foreground">
+                            <div className="h-[12px]"></div>
+                            <div className="h-[12px] flex items-center">M</div>
+                            <div className="h-[12px]"></div>
+                            <div className="h-[12px] flex items-center">W</div>
+                            <div className="h-[12px]"></div>
+                            <div className="h-[12px] flex items-center">F</div>
+                            <div className="h-[12px]"></div>
+                          </div>
+                          
+                          {/* Weeks grid */}
+                          <TooltipProvider>
+                            <div className="flex gap-[2px]">
+                              {yearlyData.map((week, weekIndex) => (
+                                <div key={weekIndex} className="flex flex-col gap-[2px]">
+                                  {week.days.map((day, dayIndex) => (
+                                    <Tooltip key={dayIndex}>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          onClick={() => handleYearDayClick(day)}
+                                          disabled={day.isFuture}
+                                          className={`w-[12px] h-[12px] rounded-sm transition-all ${
+                                            getHeatmapColor(day.rate, day.isFuture)
+                                          } ${!day.isFuture ? 'cursor-pointer hover:ring-1 hover:ring-primary/50' : 'cursor-default'}`}
+                                        />
+                                      </TooltipTrigger>
+                                      {!day.isFuture && (
+                                        <TooltipContent>
+                                          <p className="font-medium">
+                                            {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {day.completed}/{habits.length} habits ({day.rate}%)
+                                          </p>
+                                        </TooltipContent>
+                                      )}
+                                    </Tooltip>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                    </ScrollArea>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
-              <span>Less</span>
-              <div className="flex gap-1">
-                <div className="w-4 h-4 rounded bg-muted/50" />
-                <div className="w-4 h-4 rounded bg-red-500/30" />
-                <div className="w-4 h-4 rounded bg-orange-500/40" />
-                <div className="w-4 h-4 rounded bg-amber-500/50" />
-                <div className="w-4 h-4 rounded bg-green-500/60" />
-                <div className="w-4 h-4 rounded bg-green-500" />
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+                <span>Less</span>
+                <div className="flex gap-1">
+                  <div className="w-3 h-3 rounded-sm bg-muted/50" />
+                  <div className="w-3 h-3 rounded-sm bg-red-500/30" />
+                  <div className="w-3 h-3 rounded-sm bg-orange-500/40" />
+                  <div className="w-3 h-3 rounded-sm bg-amber-500/50" />
+                  <div className="w-3 h-3 rounded-sm bg-green-500/60" />
+                  <div className="w-3 h-3 rounded-sm bg-green-500" />
+                </div>
+                <span>More</span>
               </div>
-              <span>More</span>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-      {/* Month-over-Month Comparison */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        <Card className="h-full">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${
-                monthComparison.trend === 'up' ? 'bg-green-500/10' :
-                monthComparison.trend === 'down' ? 'bg-red-500/10' :
-                'bg-muted/50'
+        {/* Month-over-Month Comparison */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${
+                  monthComparison.trend === 'up' ? 'bg-green-500/10' :
+                  monthComparison.trend === 'down' ? 'bg-red-500/10' :
+                  'bg-muted/50'
+                }`}>
+                  {monthComparison.trend === 'up' ? (
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                  ) : monthComparison.trend === 'down' ? (
+                    <TrendingDown className="h-5 w-5 text-red-500" />
+                  ) : (
+                    <Minus className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Month Comparison</CardTitle>
+                  <CardDescription>vs {shortMonthNames[prevMonth]} (first {currentDay} days)</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Big comparison display */}
+              <div className="flex items-center justify-center gap-8">
+                {/* Previous month */}
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">{shortMonthNames[prevMonth]}</p>
+                  <p className="text-3xl font-bold text-muted-foreground">{monthComparison.previous}%</p>
+                </div>
+
+                {/* Arrow indicator */}
+                <div className={`flex flex-col items-center ${
+                  monthComparison.trend === 'up' ? 'text-green-500' :
+                  monthComparison.trend === 'down' ? 'text-red-500' :
+                  'text-muted-foreground'
+                }`}>
+                  {monthComparison.trend === 'up' ? (
+                    <ArrowUp className="h-6 w-6" />
+                  ) : monthComparison.trend === 'down' ? (
+                    <ArrowDown className="h-6 w-6" />
+                  ) : (
+                    <Minus className="h-6 w-6" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {monthComparison.change > 0 ? '+' : ''}{monthComparison.change}%
+                  </span>
+                </div>
+
+                {/* Current month */}
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">{shortMonthNames[currentMonth]}</p>
+                  <p className="text-3xl font-bold text-primary">{monthComparison.current}%</p>
+                </div>
+              </div>
+
+              {/* Visual comparison bar */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-8">{shortMonthNames[prevMonth]}</span>
+                  <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-muted-foreground/50 rounded-full transition-all"
+                      style={{ width: `${monthComparison.previous}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium w-10 text-right">{monthComparison.previous}%</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-8">{shortMonthNames[currentMonth]}</span>
+                  <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${
+                        monthComparison.trend === 'up' ? 'bg-green-500' :
+                        monthComparison.trend === 'down' ? 'bg-red-500' :
+                        'bg-primary'
+                      }`}
+                      style={{ width: `${monthComparison.current}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium w-10 text-right">{monthComparison.current}%</span>
+                </div>
+              </div>
+
+              {/* Insight message */}
+              <div className={`p-3 rounded-lg text-sm text-center ${
+                monthComparison.trend === 'up' ? 'bg-green-500/10 text-green-700 dark:text-green-400' :
+                monthComparison.trend === 'down' ? 'bg-red-500/10 text-red-700 dark:text-red-400' :
+                'bg-muted text-muted-foreground'
               }`}>
                 {monthComparison.trend === 'up' ? (
-                  <TrendingUp className="h-5 w-5 text-green-500" />
+                  <>🎉 Great progress! You're {monthComparison.change}% more consistent this month.</>
                 ) : monthComparison.trend === 'down' ? (
-                  <TrendingDown className="h-5 w-5 text-red-500" />
+                  <>📈 Keep pushing! You're {Math.abs(monthComparison.change)}% behind last month's pace.</>
                 ) : (
-                  <Minus className="h-5 w-5 text-muted-foreground" />
+                  <>⚡ Staying steady! Your consistency matches last month.</>
                 )}
               </div>
-              <div>
-                <CardTitle className="text-lg">Month Comparison</CardTitle>
-                <CardDescription>vs {shortMonthNames[prevMonth]} (first {currentDay} days)</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Big comparison display */}
-            <div className="flex items-center justify-center gap-8">
-              {/* Previous month */}
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">{shortMonthNames[prevMonth]}</p>
-                <p className="text-3xl font-bold text-muted-foreground">{monthComparison.previous}%</p>
-              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
 
-              {/* Arrow indicator */}
-              <div className={`flex flex-col items-center ${
-                monthComparison.trend === 'up' ? 'text-green-500' :
-                monthComparison.trend === 'down' ? 'text-red-500' :
-                'text-muted-foreground'
-              }`}>
-                {monthComparison.trend === 'up' ? (
-                  <ArrowUp className="h-6 w-6" />
-                ) : monthComparison.trend === 'down' ? (
-                  <ArrowDown className="h-6 w-6" />
-                ) : (
-                  <Minus className="h-6 w-6" />
-                )}
-                <span className="text-sm font-medium">
-                  {monthComparison.change > 0 ? '+' : ''}{monthComparison.change}%
+      {/* Day Details Dialog */}
+      <Dialog open={!!selectedDay} onOpenChange={() => setSelectedDay(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              {selectedDay && new Date(selectedDay.dateStr).toLocaleDateString('en-US', { 
+                weekday: 'long',
+                month: 'long', 
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedDay && (
+                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  selectedDay.rate === 100 ? 'bg-green-500/20 text-green-600' :
+                  selectedDay.rate >= 50 ? 'bg-amber-500/20 text-amber-600' :
+                  selectedDay.rate > 0 ? 'bg-orange-500/20 text-orange-600' :
+                  'bg-muted text-muted-foreground'
+                }`}>
+                  {selectedDay.completed}/{habits.length} completed ({selectedDay.rate}%)
                 </span>
-              </div>
-
-              {/* Current month */}
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">{shortMonthNames[currentMonth]}</p>
-                <p className="text-3xl font-bold text-primary">{monthComparison.current}%</p>
-              </div>
-            </div>
-
-            {/* Visual comparison bar */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground w-8">{shortMonthNames[prevMonth]}</span>
-                <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-muted-foreground/50 rounded-full transition-all"
-                    style={{ width: `${monthComparison.previous}%` }}
-                  />
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[400px]">
+            <div className="space-y-4 pr-4">
+              {/* Completed habits */}
+              {selectedDayHabits.completed.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium flex items-center gap-2 text-green-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Completed ({selectedDayHabits.completed.length})
+                  </h4>
+                  <div className="space-y-1">
+                    {selectedDayHabits.completed.map(habit => (
+                      <div 
+                        key={habit.id}
+                        className="flex items-center gap-3 p-2 rounded-lg bg-green-500/10 border border-green-500/20"
+                      >
+                        <span className="text-lg">{habit.icon}</span>
+                        <span className="text-sm font-medium">{habit.name}</span>
+                        <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <span className="text-xs font-medium w-10 text-right">{monthComparison.previous}%</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground w-8">{shortMonthNames[currentMonth]}</span>
-                <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all ${
-                      monthComparison.trend === 'up' ? 'bg-green-500' :
-                      monthComparison.trend === 'down' ? 'bg-red-500' :
-                      'bg-primary'
-                    }`}
-                    style={{ width: `${monthComparison.current}%` }}
-                  />
-                </div>
-                <span className="text-xs font-medium w-10 text-right">{monthComparison.current}%</span>
-              </div>
-            </div>
+              )}
 
-            {/* Insight message */}
-            <div className={`p-3 rounded-lg text-sm text-center ${
-              monthComparison.trend === 'up' ? 'bg-green-500/10 text-green-700 dark:text-green-400' :
-              monthComparison.trend === 'down' ? 'bg-red-500/10 text-red-700 dark:text-red-400' :
-              'bg-muted text-muted-foreground'
-            }`}>
-              {monthComparison.trend === 'up' ? (
-                <>🎉 Great progress! You're {monthComparison.change}% more consistent this month.</>
-              ) : monthComparison.trend === 'down' ? (
-                <>📈 Keep pushing! You're {Math.abs(monthComparison.change)}% behind last month's pace.</>
-              ) : (
-                <>⚡ Staying steady! Your consistency matches last month.</>
+              {/* Incomplete habits */}
+              {selectedDayHabits.incomplete.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                    <XCircle className="h-4 w-4" />
+                    Not Completed ({selectedDayHabits.incomplete.length})
+                  </h4>
+                  <div className="space-y-1">
+                    {selectedDayHabits.incomplete.map(habit => (
+                      <div 
+                        key={habit.id}
+                        className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 border border-muted"
+                      >
+                        <span className="text-lg opacity-50">{habit.icon}</span>
+                        <span className="text-sm text-muted-foreground">{habit.name}</span>
+                        <XCircle className="h-4 w-4 text-muted-foreground/50 ml-auto" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {habits.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No habits tracked on this day
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
