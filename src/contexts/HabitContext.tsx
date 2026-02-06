@@ -46,6 +46,8 @@ interface HabitContextType {
   requestNotificationPermission: () => Promise<boolean>;
   notificationPermission: NotificationPermission | null;
   isLoading: boolean;
+  weeklyGoals: Record<string, number>;
+  updateWeeklyGoal: (category: string, goal: number) => void;
 }
 
 const HabitContext = createContext<HabitContextType | undefined>(undefined);
@@ -56,6 +58,10 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [categoryFilter, setCategoryFilter] = useState<HabitCategory | 'all'>('all');
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [weeklyGoals, setWeeklyGoals] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('weeklyGoals');
+    return saved ? JSON.parse(saved) : {};
+  });
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -316,6 +322,14 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return Math.round((completedCount / days) * 100);
   };
 
+  const updateWeeklyGoal = (category: string, goal: number) => {
+    setWeeklyGoals(prev => {
+      const updated = { ...prev, [category]: goal };
+      localStorage.setItem('weeklyGoals', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <HabitContext.Provider
       value={{
@@ -330,6 +344,8 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         requestNotificationPermission,
         notificationPermission,
         isLoading,
+        weeklyGoals,
+        updateWeeklyGoal,
       }}
     >
       {children}
