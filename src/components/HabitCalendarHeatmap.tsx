@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, CalendarDays, ArrowUp, ArrowDown, X, CheckCircle2, XCircle, Calendar, Flame, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import HeatmapExportShare from './HeatmapExportShare';
 
 interface Habit {
   id: string;
@@ -31,6 +32,7 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
   const [selectedDay, setSelectedDay] = useState<{ date: number; dateStr: string; completed: number; rate: number } | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'year'>('month');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const heatmapRef = useRef<HTMLDivElement>(null);
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -257,12 +259,15 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
                       <CardDescription>Click any day to see details</CardDescription>
                     </div>
                   </div>
-                  <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'month' | 'year')}>
-                    <TabsList className="h-8">
-                      <TabsTrigger value="month" className="text-xs px-3">Month</TabsTrigger>
-                      <TabsTrigger value="year" className="text-xs px-3">Year</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
+                  <div className="flex items-center gap-2">
+                    <HeatmapExportShare heatmapRef={heatmapRef} habits={habits} />
+                    <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'month' | 'year')}>
+                      <TabsList className="h-8">
+                        <TabsTrigger value="month" className="text-xs px-3">Month</TabsTrigger>
+                        <TabsTrigger value="year" className="text-xs px-3">Year</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
                 </div>
                 
                 {/* Category Filter */}
@@ -290,6 +295,7 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
               </div>
             </CardHeader>
             <CardContent>
+              <div ref={heatmapRef} className="p-1">
               <AnimatePresence mode="wait">
                 {viewMode === 'month' ? (
                   <motion.div
@@ -452,6 +458,7 @@ const HabitCalendarHeatmap: React.FC<HabitCalendarHeatmapProps> = ({ habits }) =
                     <span>Streak (3+ days)</span>
                   </div>
                 )}
+              </div>
               </div>
             </CardContent>
           </Card>

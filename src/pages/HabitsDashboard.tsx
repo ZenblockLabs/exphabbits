@@ -39,6 +39,7 @@ import {
 import StreakLeaderboard from "@/components/StreakLeaderboard";
 import HabitAnalytics from "@/components/HabitAnalytics";
 import HabitCategoryFilter from "@/components/HabitCategoryFilter";
+import WeeklyCategoryGoals from "@/components/WeeklyCategoryGoals";
 import { useMilestoneSound } from "@/hooks/useMilestoneSound";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -53,7 +54,7 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 const HabitsDashboard: React.FC = () => {
-  const { habits, toggleHabitCompletion, deleteHabit, getCompletionRate, categoryFilter, setCategoryFilter } =
+  const { habits, toggleHabitCompletion, deleteHabit, getCompletionRate, categoryFilter, setCategoryFilter, weeklyGoals, updateWeeklyGoal } =
     useHabits();
 
   const filteredHabits = categoryFilter === "all" ? habits : habits.filter((h) => h.category === categoryFilter);
@@ -188,6 +189,13 @@ const HabitsDashboard: React.FC = () => {
         toggleHabitCompletion={toggleHabitCompletion}
         deleteHabit={deleteHabit}
         iconMap={iconMap}
+      />
+
+      {/* Weekly Category Goals */}
+      <WeeklyCategoryGoals 
+        habits={habits} 
+        weeklyGoals={weeklyGoals} 
+        onUpdateGoal={updateWeeklyGoal} 
       />
 
       {/* Habit Analytics */}
