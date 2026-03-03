@@ -25,7 +25,7 @@ export const BudgetProgress: React.FC = () => {
   };
 
   const handleSave = (category: CategoryKey) => {
-    const value = parseInt(editValue) || 0;
+    const value = Math.max(0, Math.min(999999999, parseInt(editValue) || 0));
     updateBudget(selectedYear, category, value);
     setEditingCategory(null);
     setEditValue('');
