@@ -201,6 +201,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const updateBudget = async (year: number, category: CategoryKey, amount: number) => {
     if (!user) return;
+    if (!Number.isFinite(amount) || amount < 0 || amount > 999999999) return;
 
     // Update local state immediately
     setBudgets((prev) => ({
