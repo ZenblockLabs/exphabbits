@@ -25,20 +25,62 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Verify the PIN
+    // Check lockout status first
+    const { data: pinRow } = await supabaseAdmin
+      .from('user_pins')
+      .select('failed_attempts, locked_until')
+      .eq('user_id', user_id)
+      .maybeSingle()
+
+    if (pinRow?.locked_until && new Date(pinRow.locked_until) > new Date()) {
+      const minutesLeft = Math.ceil((new Date(pinRow.locked_until).getTime() - Date.now()) / 60000)
+      return new Response(JSON.stringify({ 
+        error: `Too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}.`,
+        locked: true,
+        locked_until: pinRow.locked_until,
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Verify the PIN (handles attempt tracking in DB function)
     const { data: isValid, error: verifyError } = await supabaseAdmin.rpc('verify_pin', {
       p_pin: pin,
       p_user_id: user_id,
     })
 
     if (verifyError || !isValid) {
-      return new Response(JSON.stringify({ error: 'Invalid PIN' }), {
+      // Check updated attempts
+      const { data: updated } = await supabaseAdmin
+        .from('user_pins')
+        .select('failed_attempts, locked_until')
+        .eq('user_id', user_id)
+        .maybeSingle()
+
+      const attemptsLeft = updated ? 5 - updated.failed_attempts : 0
+      
+      if (updated?.locked_until) {
+        return new Response(JSON.stringify({ 
+          error: 'Too many failed attempts. Account locked for 15 minutes.',
+          locked: true,
+          locked_until: updated.locked_until,
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      return new Response(JSON.stringify({ 
+        error: `Invalid PIN. ${attemptsLeft} attempt${attemptsLeft !== 1 ? 's' : ''} remaining.`,
+        attempts_left: attemptsLeft,
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // Generate a magic link token for the user
+    // Generate session
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user_id)
 
     if (userError || !userData?.user?.email) {
@@ -48,7 +90,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Generate a link to sign the user in
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: userData.user.email,
@@ -61,10 +102,8 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Extract the token from the link properties
     const { hashed_token } = linkData.properties
 
-    // Verify the OTP to get a session
     const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.verifyOtp({
       type: 'magiclink',
       token_hash: hashed_token,

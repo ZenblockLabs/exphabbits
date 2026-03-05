@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, ArrowLeft, Loader2 } from 'lucide-react';
+import { Shield, ArrowLeft, Loader2, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PIN_USER_KEY = 'habex-pin-user';
@@ -17,6 +17,9 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
   const [pin, setPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockUntil, setLockUntil] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState('');
 
   const storedUser = React.useMemo(() => {
     try {
@@ -27,8 +30,31 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
     }
   }, []);
 
+  // Countdown timer for lockout
+  React.useEffect(() => {
+    if (!lockUntil) return;
+    
+    const update = () => {
+      const diff = lockUntil.getTime() - Date.now();
+      if (diff <= 0) {
+        setIsLocked(false);
+        setLockUntil(null);
+        setCountdown('');
+        setError('');
+        return;
+      }
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      setCountdown(`${mins}:${secs.toString().padStart(2, '0')}`);
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [lockUntil]);
+
   const handlePinSubmit = async () => {
-    if (pin.length !== 6 || !storedUser?.id) return;
+    if (pin.length !== 6 || !storedUser?.id || isLocked) return;
 
     setIsLoading(true);
     setError('');
@@ -39,6 +65,10 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
       });
 
       if (fnError || data?.error) {
+        if (data?.locked) {
+          setIsLocked(true);
+          setLockUntil(new Date(data.locked_until));
+        }
         setError(data?.error || 'Invalid PIN. Please try again.');
         setPin('');
         setIsLoading(false);
@@ -63,7 +93,7 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
 
   // Auto-submit when 6 digits entered
   React.useEffect(() => {
-    if (pin.length === 6) {
+    if (pin.length === 6 && !isLocked) {
       handlePinSubmit();
     }
   }, [pin]);
@@ -78,11 +108,20 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
     <Card className="w-full max-w-md border-border/50 shadow-lg">
       <CardHeader className="text-center">
         <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
-          <Shield className="w-7 h-7 text-primary" />
+          {isLocked ? (
+            <Lock className="w-7 h-7 text-destructive" />
+          ) : (
+            <Shield className="w-7 h-7 text-primary" />
+          )}
         </div>
-        <CardTitle className="text-xl">Quick PIN Login</CardTitle>
+        <CardTitle className="text-xl">
+          {isLocked ? 'Account Locked' : 'Quick PIN Login'}
+        </CardTitle>
         <CardDescription>
-          Enter your 6-digit PIN for <span className="font-medium text-foreground">{maskedEmail}</span>
+          {isLocked
+            ? `Too many failed attempts. Try again in ${countdown}`
+            : <>Enter your 6-digit PIN for <span className="font-medium text-foreground">{maskedEmail}</span></>
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -94,7 +133,7 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
               setPin(value);
               setError('');
             }}
-            disabled={isLoading}
+            disabled={isLoading || isLocked}
           >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
@@ -114,7 +153,7 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
           </div>
         )}
 
-        {error && (
+        {error && !isLocked && (
           <p className="text-sm text-destructive text-center">{error}</p>
         )}
 
