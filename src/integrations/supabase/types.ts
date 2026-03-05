@@ -211,40 +211,12 @@ export type Database = {
         }
         Relationships: []
       }
-      user_pins: {
-        Row: {
-          created_at: string
-          id: string
-          pin_hash: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          pin_hash: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          pin_hash?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      set_pin: { Args: { p_pin: string }; Returns: undefined }
-      verify_pin: {
-        Args: { p_pin: string; p_user_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

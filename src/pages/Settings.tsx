@@ -50,7 +50,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { BADGE_SOUND_ENABLED_KEY } from '@/hooks/useBadgeSound';
-import PinSetup from '@/components/PinSetup';
 
 const VISIBILITY_STORAGE_KEY = 'sidebar-visibility-settings';
 const COLLAPSED_STORAGE_KEY = 'sidebar-collapsed';
@@ -426,9 +425,6 @@ const Settings: React.FC = () => {
           ))}
         </CardContent>
       </Card>
-
-      {/* PIN Login */}
-      <PinSetup />
 
       {/* Security Section */}
       <Card>

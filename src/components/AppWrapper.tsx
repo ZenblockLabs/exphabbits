@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SplashScreen } from './SplashScreen';
 import { OnboardingFlow } from './OnboardingFlow';
-import PinLockScreen from './PinLockScreen';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { PIN_ENABLED_KEY } from './PinSetup';
 
 interface AppWrapperProps {
   children: React.ReactNode;
@@ -12,69 +9,27 @@ interface AppWrapperProps {
 
 const ONBOARDING_KEY = 'habex-onboarding-complete';
 const SPLASH_SHOWN_KEY = 'habex-splash-shown-session';
-const PIN_UNLOCKED_KEY = 'habex-pin-unlocked-session';
 
 export const AppWrapper: React.FC<AppWrapperProps> = ({ children }) => {
   const { user, isLoading: authLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash once per session
     return !sessionStorage.getItem(SPLASH_SHOWN_KEY);
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showPinLock, setShowPinLock] = useState(false);
-  const [pinChecked, setPinChecked] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    // Mark splash as shown for this session
     if (showSplash) {
       sessionStorage.setItem(SPLASH_SHOWN_KEY, 'true');
     }
   }, [showSplash]);
 
-  // Check if user has PIN enabled
-  useEffect(() => {
-    const checkPin = async () => {
-      if (!user || authLoading || showSplash) return;
-      
-      // Already unlocked this session
-      if (sessionStorage.getItem(PIN_UNLOCKED_KEY)) {
-        setPinChecked(true);
-        return;
-      }
-
-      // Quick check: does user have PIN enabled locally?
-      if (!localStorage.getItem(PIN_ENABLED_KEY)) {
-        setPinChecked(true);
-        return;
-      }
-
-      // Verify in database
-      try {
-        const { data } = await supabase
-          .from('user_pins')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (data) {
-          setShowPinLock(true);
-        }
-      } catch {
-        // If check fails, skip PIN
-      }
-      setPinChecked(true);
-    };
-
-    checkPin();
-  }, [user, authLoading, showSplash]);
-
-  const handlePinUnlock = () => {
-    sessionStorage.setItem(PIN_UNLOCKED_KEY, 'true');
-    setShowPinLock(false);
-  };
-
   const handleSplashComplete = () => {
     setShowSplash(false);
     
+    // Check if user is logged in and hasn't seen onboarding
     if (user && !localStorage.getItem(ONBOARDING_KEY)) {
       setShowOnboarding(true);
     } else {
@@ -88,6 +43,7 @@ export const AppWrapper: React.FC<AppWrapperProps> = ({ children }) => {
     setIsReady(true);
   };
 
+  // When auth state changes after splash, check onboarding
   useEffect(() => {
     if (!showSplash && !authLoading) {
       if (user && !localStorage.getItem(ONBOARDING_KEY)) {
@@ -98,15 +54,12 @@ export const AppWrapper: React.FC<AppWrapperProps> = ({ children }) => {
     }
   }, [user, authLoading, showSplash]);
 
+  // Show splash screen
   if (showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-  // Show PIN lock screen if PIN is set and not yet unlocked
-  if (user && pinChecked && showPinLock) {
-    return <PinLockScreen onUnlock={handlePinUnlock} />;
-  }
-
+  // Show onboarding for logged-in users who haven't completed it
   if (showOnboarding && user) {
     return (
       <>
