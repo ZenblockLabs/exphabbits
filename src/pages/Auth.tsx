@@ -10,7 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Wallet, TrendingUp, Target, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
+import { PinLogin } from '@/components/PinLogin';
 
+const PIN_USER_KEY = 'habex-pin-user';
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
@@ -25,6 +27,11 @@ const Auth: React.FC = () => {
   const [resetEmail, setResetEmail] = useState('');
   const [resetEmailError, setResetEmailError] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [showPinLogin, setShowPinLogin] = useState(() => {
+    try {
+      return !!localStorage.getItem(PIN_USER_KEY);
+    } catch { return false; }
+  });
 
   useEffect(() => {
     if (user) {
@@ -172,7 +179,12 @@ const Auth: React.FC = () => {
 
       {/* Right side - Auth form */}
       <div className="lg:w-1/2 p-8 lg:p-16 flex items-center justify-center">
-        {showForgotPassword ? (
+        {showPinLogin ? (
+          <PinLogin
+            onBack={() => setShowPinLogin(false)}
+            onSuccess={() => navigate('/')}
+          />
+        ) : showForgotPassword ? (
           <Card className="w-full max-w-md border-border/50 shadow-lg">
             <form onSubmit={handleForgotPassword}>
               <CardHeader>
