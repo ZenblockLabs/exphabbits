@@ -13,6 +13,50 @@ interface PinLoginProps {
   onSuccess: () => void;
 }
 
+interface PinFunctionSuccess {
+  success: true;
+  session: {
+    access_token: string;
+    refresh_token: string;
+  };
+}
+
+interface PinFunctionFailure {
+  success: false;
+  code?: string;
+  error: string;
+  attempts_left?: number;
+  locked?: boolean;
+  locked_until?: string;
+}
+
+type PinFunctionResponse = PinFunctionSuccess | PinFunctionFailure;
+
+const parseInvokeErrorPayload = (message?: string): PinFunctionFailure | null => {
+  if (!message) return null;
+
+  const jsonMatch = message.match(/\{[\s\S]*\}$/);
+  if (!jsonMatch) return null;
+
+  try {
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (parsed && typeof parsed === 'object' && typeof parsed.error === 'string') {
+      return {
+        success: false,
+        code: parsed.code,
+        error: parsed.error,
+        attempts_left: parsed.attempts_left,
+        locked: parsed.locked,
+        locked_until: parsed.locked_until,
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
 export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
   const [pin, setPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,10 +74,9 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
     }
   }, []);
 
-  // Countdown timer for lockout
   React.useEffect(() => {
     if (!lockUntil) return;
-    
+
     const update = () => {
       const diff = lockUntil.getTime() - Date.now();
       if (diff <= 0) {
@@ -43,6 +86,7 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
         setError('');
         return;
       }
+
       const mins = Math.floor(diff / 60000);
       const secs = Math.floor((diff % 60000) / 1000);
       setCountdown(`${mins}:${secs.toString().padStart(2, '0')}`);
@@ -53,6 +97,16 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
     return () => clearInterval(interval);
   }, [lockUntil]);
 
+  const applyFailureState = (failure: PinFunctionFailure) => {
+    if (failure.locked && failure.locked_until) {
+      setIsLocked(true);
+      setLockUntil(new Date(failure.locked_until));
+    }
+
+    setError(failure.error || 'Invalid PIN. Please try again.');
+    setPin('');
+  };
+
   const handlePinSubmit = async () => {
     if (pin.length !== 6 || !storedUser?.id || isLocked) return;
 
@@ -60,29 +114,38 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
     setError('');
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('pin-login', {
+      const { data, error: invokeError } = await supabase.functions.invoke<PinFunctionResponse>('pin-login', {
         body: { user_id: storedUser.id, pin },
       });
 
-      if (fnError || data?.error) {
-        if (data?.locked) {
-          setIsLocked(true);
-          setLockUntil(new Date(data.locked_until));
+      if (invokeError) {
+        const parsed = parseInvokeErrorPayload(invokeError.message);
+        if (parsed) {
+          applyFailureState(parsed);
+        } else {
+          setError('Unable to verify PIN right now. Please try again.');
+          setPin('');
         }
-        setError(data?.error || 'Invalid PIN. Please try again.');
-        setPin('');
-        setIsLoading(false);
         return;
       }
 
-      if (data?.session) {
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
-        toast.success('Welcome back!');
-        onSuccess();
+      if (!data) {
+        setError('Unable to verify PIN right now. Please try again.');
+        setPin('');
+        return;
       }
+
+      if ('success' in data && data.success === false) {
+        applyFailureState(data as PinFunctionFailure);
+        return;
+      }
+
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+      toast.success('Welcome back!');
+      onSuccess();
     } catch {
       setError('Something went wrong. Please try again.');
       setPin('');
@@ -91,7 +154,6 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
     }
   };
 
-  // Auto-submit when 6 digits entered
   React.useEffect(() => {
     if (pin.length === 6 && !isLocked) {
       handlePinSubmit();
@@ -108,20 +170,17 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
     <Card className="w-full max-w-md border-border/50 shadow-lg">
       <CardHeader className="text-center">
         <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
-          {isLocked ? (
-            <Lock className="w-7 h-7 text-destructive" />
-          ) : (
-            <Shield className="w-7 h-7 text-primary" />
-          )}
+          {isLocked ? <Lock className="w-7 h-7 text-destructive" /> : <Shield className="w-7 h-7 text-primary" />}
         </div>
-        <CardTitle className="text-xl">
-          {isLocked ? 'Account Locked' : 'Quick PIN Login'}
-        </CardTitle>
+        <CardTitle className="text-xl">{isLocked ? 'Account Locked' : 'Quick PIN Login'}</CardTitle>
         <CardDescription>
           {isLocked
             ? `Too many failed attempts. Try again in ${countdown}`
-            : <>Enter your 6-digit PIN for <span className="font-medium text-foreground">{maskedEmail}</span></>
-          }
+            : (
+              <>
+                Enter your 6-digit PIN for <span className="font-medium text-foreground">{maskedEmail}</span>
+              </>
+            )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -153,16 +212,10 @@ export const PinLogin: React.FC<PinLoginProps> = ({ onBack, onSuccess }) => {
           </div>
         )}
 
-        {error && !isLocked && (
-          <p className="text-sm text-destructive text-center">{error}</p>
-        )}
+        {error && !isLocked && <p className="text-sm text-destructive text-center">{error}</p>}
 
         <div className="flex flex-col gap-2">
-          <Button
-            variant="ghost"
-            className="w-full"
-            onClick={onBack}
-          >
+          <Button variant="ghost" className="w-full" onClick={onBack}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Use email & password instead
           </Button>
