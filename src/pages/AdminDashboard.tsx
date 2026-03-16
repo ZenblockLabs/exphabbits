@@ -197,7 +197,7 @@ const AdminDashboard: React.FC = () => {
                     <p className="font-medium text-foreground">Database Status</p>
                     <p className="text-sm text-muted-foreground">Connection to backend</p>
                   </div>
-                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Connected</Badge>
+                  <Badge className="bg-accent/10 text-accent border-accent/20">Connected</Badge>
                 </div>
                 <div className="flex items-center justify-between p-4 rounded-lg border border-border">
                   <div>
