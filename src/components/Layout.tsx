@@ -154,6 +154,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
   const location = useLocation();
+  const { isAdmin } = useAdmin();
 
   // Listen for storage changes from Settings page
   useEffect(() => {
