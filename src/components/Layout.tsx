@@ -1,4 +1,4 @@
-// Layout component - v7 - with notifications and profile dropdown
+// Layout component - v8 - with admin nav link
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,8 +22,10 @@ import {
   Flame,
   User,
   BookOpen,
-  RefreshCw
+  RefreshCw,
+  Shield
 } from 'lucide-react';
+import { useAdmin } from '@/hooks/useAdmin';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
