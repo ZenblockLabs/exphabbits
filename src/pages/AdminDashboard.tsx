@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Shield, Users, BarChart3, Settings as SettingsIcon, RefreshCw, Download } from 'lucide-react';
+import { Shield, Users, BarChart3, Settings as SettingsIcon, RefreshCw, Download, Activity, UserPlus, LogIn, Wallet, Target, PiggyBank } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -24,6 +25,13 @@ interface AppStats {
   totalRecurring: number;
 }
 
+interface ActivityEvent {
+  type: string;
+  email: string;
+  timestamp: string;
+  description: string;
+}
+
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return 'Never';
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -33,6 +41,41 @@ const formatDate = (dateStr: string | null) => {
     hour: '2-digit',
     minute: '2-digit',
   });
+};
+
+const formatRelativeTime = (dateStr: string) => {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return formatDate(dateStr);
+};
+
+const getActivityIcon = (type: string) => {
+  switch (type) {
+    case 'signup': return <UserPlus className="w-4 h-4 text-accent" />;
+    case 'login': return <LogIn className="w-4 h-4 text-primary" />;
+    case 'expense':
+    case 'expense_update': return <Wallet className="w-4 h-4 text-primary" />;
+    case 'habit': return <Target className="w-4 h-4 text-accent" />;
+    case 'budget': return <PiggyBank className="w-4 h-4 text-primary" />;
+    default: return <Activity className="w-4 h-4 text-muted-foreground" />;
+  }
+};
+
+const getActivityBadgeVariant = (type: string): 'default' | 'secondary' | 'outline' => {
+  switch (type) {
+    case 'signup': return 'default';
+    case 'login': return 'secondary';
+    default: return 'outline';
+  }
 };
 
 const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
@@ -49,6 +92,7 @@ const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
 
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<UserInfo[]>([]);
+  const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [stats, setStats] = useState<AppStats>({
     totalUsers: 0,
     totalExpenses: 0,
@@ -58,6 +102,7 @@ const AdminDashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   const fetchStats = useCallback(async () => {
     const [expensesRes, habitsRes, budgetsRes, recurringRes] = await Promise.all([
@@ -91,11 +136,24 @@ const AdminDashboard: React.FC = () => {
     setUsersLoading(false);
   }, []);
 
+  const fetchActivity = useCallback(async () => {
+    setActivityLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-activity');
+      if (error) throw error;
+      setActivities(data?.activities ?? []);
+    } catch (err: any) {
+      console.error('Failed to fetch activity:', err);
+      toast.error('Failed to load activity log');
+    }
+    setActivityLoading(false);
+  }, []);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchStats(), fetchUsers()]);
+    await Promise.all([fetchStats(), fetchUsers(), fetchActivity()]);
     setLoading(false);
-  }, [fetchStats, fetchUsers]);
+  }, [fetchStats, fetchUsers, fetchActivity]);
 
   useEffect(() => {
     fetchData();
@@ -124,6 +182,17 @@ const AdminDashboard: React.FC = () => {
     downloadCSV('analytics', headers, rows);
   };
 
+  const exportActivityCSV = () => {
+    const headers = ['Type', 'User', 'Description', 'Timestamp'];
+    const rows = activities.map((a) => [
+      a.type,
+      a.email,
+      a.description,
+      formatDate(a.timestamp),
+    ]);
+    downloadCSV('activity-log', headers, rows);
+  };
+
   return (
     <div className="space-y-6 p-4 lg:p-6">
       {/* Header */}
@@ -145,7 +214,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="analytics" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="analytics" className="gap-2">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Analytics</span>
@@ -158,6 +227,10 @@ const AdminDashboard: React.FC = () => {
                 {stats.totalUsers}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="gap-2">
+            <Activity className="w-4 h-4" />
+            <span className="hidden sm:inline">Activity</span>
           </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2">
             <SettingsIcon className="w-4 h-4" />
@@ -287,6 +360,60 @@ const AdminDashboard: React.FC = () => {
                     </TableBody>
                   </Table>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Activity Tab */}
+        <TabsContent value="activity" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div>
+                <CardTitle>Activity Log</CardTitle>
+                <CardDescription>Recent signups, logins, and data changes (last 30 days)</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={exportActivityCSV} disabled={activities.length === 0}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {activityLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">Loading activity...</span>
+                </div>
+              ) : activities.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  No recent activity
+                </div>
+              ) : (
+                <ScrollArea className="h-[500px] pr-4">
+                  <div className="space-y-1">
+                    {activities.map((event, i) => (
+                      <div
+                        key={`${event.timestamp}-${i}`}
+                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="mt-0.5 flex-shrink-0 p-1.5 rounded-md bg-muted">
+                          {getActivityIcon(event.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground leading-snug">{event.description}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant={getActivityBadgeVariant(event.type)} className="text-xs capitalize">
+                              {event.type.replace('_', ' ')}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {formatRelativeTime(event.timestamp)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               )}
             </CardContent>
           </Card>
