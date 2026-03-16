@@ -12,6 +12,7 @@ import { RecurringExpenseProvider } from "@/contexts/RecurringExpenseContext";
 import { Layout } from "@/components/Layout";
 import { AppWrapper } from "@/components/AppWrapper";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import MonthlyView from "./pages/MonthlyView";
 import AddEditExpense from "./pages/AddEditExpense";
