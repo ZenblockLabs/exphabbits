@@ -109,6 +109,13 @@ function App() {
                       </ProtectedRoute>
                     } />
                     
+                    {/* Admin */}
+                    <Route path="/admin" element={
+                      <AdminRoute>
+                        <Layout><AdminDashboard /></Layout>
+                      </AdminRoute>
+                    } />
+                    
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   </HabitProvider>
