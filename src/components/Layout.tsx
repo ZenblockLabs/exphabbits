@@ -1,4 +1,4 @@
-// Layout component - v7 - with notifications and profile dropdown
+// Layout component - v8 - with admin nav link
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,8 +22,10 @@ import {
   Flame,
   User,
   BookOpen,
-  RefreshCw
+  RefreshCw,
+  Shield
 } from 'lucide-react';
+import { useAdmin } from '@/hooks/useAdmin';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -152,6 +154,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
   const location = useLocation();
+  const { isAdmin } = useAdmin();
 
   // Listen for storage changes from Settings page
   useEffect(() => {
@@ -391,8 +394,50 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             })}
           </nav>
 
-          {/* Settings Link */}
-          <div className="px-2 py-2">
+          {/* Admin & Settings Links */}
+          <div className="px-2 py-2 space-y-1">
+            {/* Admin Link - only visible to admins */}
+            {isAdmin && (
+              collapsed ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <NavLink
+                      to="/admin"
+                      onClick={closeSidebar}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center justify-center w-full p-3 rounded-lg transition-all duration-200",
+                          isActive
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        )
+                      }
+                    >
+                      <Shield className="w-5 h-5" />
+                    </NavLink>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Admin</TooltipContent>
+                </Tooltip>
+              ) : (
+                <NavLink
+                  to="/admin"
+                  onClick={closeSidebar}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                      isActive
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )
+                  }
+                >
+                  <Shield className="w-5 h-5" />
+                  Admin
+                </NavLink>
+              )
+            )}
+
+            {/* Settings Link */}
             {collapsed ? (
               <Tooltip>
                 <TooltipTrigger asChild>

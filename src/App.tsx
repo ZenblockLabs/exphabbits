@@ -12,6 +12,7 @@ import { RecurringExpenseProvider } from "@/contexts/RecurringExpenseContext";
 import { Layout } from "@/components/Layout";
 import { AppWrapper } from "@/components/AppWrapper";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import MonthlyView from "./pages/MonthlyView";
 import AddEditExpense from "./pages/AddEditExpense";
@@ -24,6 +25,7 @@ import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import CombinedDashboard from "./pages/CombinedDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +107,13 @@ function App() {
                       <ProtectedRoute>
                         <Layout><Settings /></Layout>
                       </ProtectedRoute>
+                    } />
+                    
+                    {/* Admin */}
+                    <Route path="/admin" element={
+                      <AdminRoute>
+                        <Layout><AdminDashboard /></Layout>
+                      </AdminRoute>
                     } />
                     
                     <Route path="*" element={<NotFound />} />
