@@ -92,6 +92,148 @@ const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
   toast.success(`${filename}.csv downloaded`);
 };
 
+const ACTIVITY_COLORS = [
+  'hsl(var(--primary))',
+  'hsl(var(--accent))',
+  'hsl(142 71% 45%)',
+  'hsl(38 92% 50%)',
+  'hsl(280 67% 55%)',
+  'hsl(200 80% 50%)',
+];
+
+const signupChartConfig = {
+  signups: { label: 'Signups', color: 'hsl(var(--primary))' },
+  cumulative: { label: 'Total Users', color: 'hsl(var(--accent))' },
+};
+
+const activityTypeConfig = {
+  signup: { label: 'Signups', color: 'hsl(var(--primary))' },
+  login: { label: 'Logins', color: 'hsl(var(--accent))' },
+  expense: { label: 'Expenses', color: 'hsl(142 71% 45%)' },
+  habit: { label: 'Habits', color: 'hsl(38 92% 50%)' },
+  budget: { label: 'Budgets', color: 'hsl(280 67% 55%)' },
+  other: { label: 'Other', color: 'hsl(var(--muted-foreground))' },
+};
+
+const SignupTrendsChart: React.FC<{ users: UserInfo[] }> = ({ users }) => {
+  const chartData = useMemo(() => {
+    if (!users.length) return [];
+    const sorted = [...users].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const byMonth: Record<string, number> = {};
+    for (const u of sorted) {
+      const d = new Date(u.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      byMonth[key] = (byMonth[key] || 0) + 1;
+    }
+    let cumulative = 0;
+    return Object.entries(byMonth).map(([month, count]) => {
+      cumulative += count;
+      return { month, signups: count, cumulative };
+    });
+  }, [users]);
+
+  if (!chartData.length) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Signup Trends</CardTitle>
+        <CardDescription>New user signups over time</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={signupChartConfig} className="h-[300px] w-full">
+          <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+            <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+            <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Line type="monotone" dataKey="signups" stroke="var(--color-signups)" strokeWidth={2} dot={{ r: 4 }} />
+            <Line type="monotone" dataKey="cumulative" stroke="var(--color-cumulative)" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+          </LineChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ActivityPatternsCharts: React.FC<{ activities: ActivityEvent[] }> = ({ activities }) => {
+  const { dailyData, typeData } = useMemo(() => {
+    if (!activities.length) return { dailyData: [], typeData: [] };
+
+    // Daily activity counts (last 30 days)
+    const dailyCounts: Record<string, number> = {};
+    const typeCounts: Record<string, number> = {};
+
+    for (const a of activities) {
+      const d = new Date(a.timestamp);
+      const dayKey = `${d.getMonth() + 1}/${d.getDate()}`;
+      dailyCounts[dayKey] = (dailyCounts[dayKey] || 0) + 1;
+
+      const t = a.type.includes('expense') ? 'expense' : (a.type in activityTypeConfig ? a.type : 'other');
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+    }
+
+    const dailyData = Object.entries(dailyCounts)
+      .slice(0, 30)
+      .map(([day, count]) => ({ day, count }));
+
+    const typeData = Object.entries(typeCounts).map(([name, value], i) => ({
+      name: activityTypeConfig[name as keyof typeof activityTypeConfig]?.label || name,
+      value,
+      fill: ACTIVITY_COLORS[i % ACTIVITY_COLORS.length],
+    }));
+
+    return { dailyData, typeData };
+  }, [activities]);
+
+  if (!dailyData.length) return null;
+
+  const dailyChartConfig = { count: { label: 'Events', color: 'hsl(var(--primary))' } };
+  const pieChartConfig = Object.fromEntries(
+    typeData.map((d) => [d.name, { label: d.name, color: d.fill }])
+  );
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Daily Activity</CardTitle>
+          <CardDescription>Events per day (last 30 days)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={dailyChartConfig} className="h-[300px] w-full">
+            <BarChart data={dailyData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+              <XAxis dataKey="day" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+              <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Activity Breakdown</CardTitle>
+          <CardDescription>Events by type</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={pieChartConfig} className="h-[300px] w-full">
+            <PieChart>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                {typeData.map((entry, i) => (
+                  <Cell key={i} fill={entry.fill} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
