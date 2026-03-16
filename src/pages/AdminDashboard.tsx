@@ -281,6 +281,12 @@ const AdminDashboard: React.FC = () => {
             </Card>
           </div>
 
+          {/* Signup Trends Chart */}
+          <SignupTrendsChart users={users} />
+
+          {/* Activity Patterns Chart */}
+          <ActivityPatternsCharts activities={activities} />
+
           <Card>
             <CardHeader>
               <CardTitle>Data Overview</CardTitle>
