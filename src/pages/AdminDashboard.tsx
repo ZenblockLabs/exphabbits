@@ -211,7 +211,7 @@ const AdminDashboard: React.FC = () => {
                     <p className="font-medium text-foreground">Row Level Security</p>
                     <p className="text-sm text-muted-foreground">All tables protected</p>
                   </div>
-                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Enabled</Badge>
+                  <Badge className="bg-accent/10 text-accent border-accent/20">Enabled</Badge>
                 </div>
               </div>
             </CardContent>
