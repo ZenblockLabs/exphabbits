@@ -1,0 +1,1 @@
+ALTER TABLE public.investment_groups ALTER COLUMN created_by SET DEFAULT auth.uid();
