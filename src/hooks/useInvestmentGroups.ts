@@ -75,9 +75,9 @@ export function useInvestmentGroups() {
     if (!user) return null;
     const { data, error } = await supabase
       .from('investment_groups')
-      .insert({ name, description, created_by: user.id } as any)
+      .insert({ name, description } as any)
       .select()
-      .single();
+      .maybeSingle();
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
       return null;
