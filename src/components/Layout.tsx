@@ -138,6 +138,13 @@ const navGroups: NavGroup[] = [
       { to: '/notebook', icon: BookOpen, label: 'Notebook' },
     ],
   },
+  {
+    label: 'Shared Investments',
+    icon: Handshake,
+    items: [
+      { to: '/investments', icon: TrendingUp, label: 'Groups' },
+    ],
+  },
 ];
 
 const VISIBILITY_STORAGE_KEY = 'sidebar-visibility-settings';
