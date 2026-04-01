@@ -104,6 +104,18 @@ function App() {
                       </ProtectedRoute>
                     } />
                     
+                    {/* Shared Investments */}
+                    <Route path="/investments" element={
+                      <ProtectedRoute>
+                        <Layout><SharedInvestments /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/investments/:groupId" element={
+                      <ProtectedRoute>
+                        <Layout><InvestmentGroupDashboard /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    
                     {/* Settings */}
                     <Route path="/settings" element={
                       <ProtectedRoute>
