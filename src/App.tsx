@@ -21,6 +21,8 @@ import HabitsDashboard from "./pages/HabitsDashboard";
 import AddHabit from "./pages/AddHabit";
 import Challenge21Days from "./pages/Challenge21Days";
 import Notebook from "./pages/Notebook";
+import SharedInvestments from "./pages/SharedInvestments";
+import InvestmentGroupDashboard from "./pages/InvestmentGroupDashboard";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -99,6 +101,18 @@ function App() {
                     <Route path="/notebook" element={
                       <ProtectedRoute>
                         <Layout><Notebook /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Shared Investments */}
+                    <Route path="/investments" element={
+                      <ProtectedRoute>
+                        <Layout><SharedInvestments /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/investments/:groupId" element={
+                      <ProtectedRoute>
+                        <Layout><InvestmentGroupDashboard /></Layout>
                       </ProtectedRoute>
                     } />
                     

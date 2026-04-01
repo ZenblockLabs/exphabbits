@@ -77,6 +77,147 @@ export type Database = {
         }
         Relationships: []
       }
+      group_expenses: {
+        Row: {
+          added_by: string
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          expense_date: string
+          group_id: string
+          id: string
+          receipt_url: string | null
+          spent_by: string
+          updated_at: string
+        }
+        Insert: {
+          added_by: string
+          amount: number
+          category: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          group_id: string
+          id?: string
+          receipt_url?: string | null
+          spent_by: string
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          group_id?: string
+          id?: string
+          receipt_url?: string | null
+          spent_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_expenses_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "investment_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_investments: {
+        Row: {
+          added_by: string
+          amount: number
+          created_at: string
+          description: string | null
+          group_id: string
+          id: string
+          invested_date: string
+          member_email: string | null
+          member_name: string
+          updated_at: string
+        }
+        Insert: {
+          added_by: string
+          amount: number
+          created_at?: string
+          description?: string | null
+          group_id: string
+          id?: string
+          invested_date?: string
+          member_email?: string | null
+          member_name: string
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          amount?: number
+          created_at?: string
+          description?: string | null
+          group_id?: string
+          id?: string
+          invested_date?: string
+          member_email?: string | null
+          member_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_investments_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "investment_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          created_at: string
+          email: string
+          group_id: string
+          id: string
+          invited_by: string
+          permissions: Database["public"]["Enums"]["group_permission"][]
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          group_id: string
+          id?: string
+          invited_by: string
+          permissions?: Database["public"]["Enums"]["group_permission"][]
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          group_id?: string
+          id?: string
+          invited_by?: string
+          permissions?: Database["public"]["Enums"]["group_permission"][]
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "investment_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       habit_completions: {
         Row: {
           completed_date: string
@@ -157,6 +298,33 @@ export type Database = {
           target_days?: number
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      investment_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -267,11 +435,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_group_permission: {
+        Args: {
+          _group_id: string
+          _permission: Database["public"]["Enums"]["group_permission"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
       set_pin: { Args: { p_pin: string }; Returns: undefined }
@@ -282,6 +462,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      group_permission:
+        | "view"
+        | "add_expense"
+        | "add_investment"
+        | "edit"
+        | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -410,6 +596,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      group_permission: [
+        "view",
+        "add_expense",
+        "add_investment",
+        "edit",
+        "admin",
+      ],
     },
   },
 } as const
