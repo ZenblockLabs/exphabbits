@@ -116,6 +116,7 @@ const InvestmentGroupDashboard: React.FC = () => {
             isCreator={isCreator}
             onAdd={details.addExpense}
             onDelete={details.deleteExpense}
+            onUpdate={details.updateExpense}
             onUploadReceipt={details.uploadReceipt}
             members={members}
           />

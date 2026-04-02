@@ -241,7 +241,7 @@ export function useGroupDetails(groupId: string | undefined) {
     group, members, investments, expenses, loading, isCreator,
     totalInvested, totalSpent, balance,
     addMember, updateMemberPermissions, removeMember,
-    addInvestment, updateInvestment, addExpense, deleteInvestment, deleteExpense,
+    addInvestment, updateInvestment, addExpense, updateExpense, deleteInvestment, deleteExpense,
     uploadReceipt, fetchAll,
   };
 }
