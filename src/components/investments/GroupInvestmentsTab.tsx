@@ -231,16 +231,18 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
                                   <TableRow key={inv.id}>
                                     <TableCell>
                                       <Input
+                                        className="h-8 w-28"
+                                        value={editing.member_name}
+                                        placeholder="Investor name"
+                                        onChange={e => setEditing({ ...editing, member_name: e.target.value })}
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
                                         type="number"
                                         className="h-8 w-24"
                                         value={editing.amount}
                                         onChange={e => setEditing({ ...editing, amount: e.target.value })}
-                                      />
-                                      <Input
-                                        className="h-8 w-28 mt-1"
-                                        value={editing.member_name}
-                                        placeholder="Name"
-                                        onChange={e => setEditing({ ...editing, member_name: e.target.value })}
                                       />
                                     </TableCell>
                                     <TableCell>
@@ -275,6 +277,7 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
 
                               return (
                                 <TableRow key={inv.id}>
+                                  <TableCell className="font-medium">{inv.member_name}</TableCell>
                                   <TableCell className={`font-semibold ${theme.text}`}>{formatter.format(Number(inv.amount))}</TableCell>
                                   <TableCell>{new Date(inv.invested_date).toLocaleDateString()}</TableCell>
                                   <TableCell className="text-muted-foreground">{inv.description || '-'}</TableCell>
@@ -284,9 +287,25 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(inv)}>
                                           <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(inv.id)}>
-                                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                        </Button>
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Delete Investment?</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                This will permanently delete {inv.member_name}'s investment of {formatter.format(Number(inv.amount))}. This action cannot be undone.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                              <AlertDialogAction onClick={() => onDelete(inv.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
                                       </div>
                                     </TableCell>
                                   )}
