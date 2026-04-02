@@ -49,6 +49,7 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
   const [form, setForm] = useState({ member_name: '', member_email: '', amount: '', description: '', invested_date: new Date().toISOString().split('T')[0] });
   const [expandedPerson, setExpandedPerson] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditState | null>(null);
+  const [editingPersonName, setEditingPersonName] = useState<{ oldName: string; newName: string } | null>(null);
 
   const handleSubmit = async () => {
     if (!form.member_name || !form.amount) return;
@@ -84,6 +85,13 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
       member_name: editing.member_name,
     });
     setEditing(null);
+  };
+
+  const savePersonName = async () => {
+    if (!editingPersonName || !editingPersonName.newName.trim()) return;
+    const toUpdate = investments.filter(inv => inv.member_name.trim().toLowerCase() === editingPersonName.oldName.trim().toLowerCase());
+    await Promise.all(toUpdate.map(inv => onUpdate(inv.id, { member_name: editingPersonName.newName.trim() })));
+    setEditingPersonName(null);
   };
 
   const formatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
@@ -191,14 +199,42 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
                 <Card key={person.name} className={`bg-gradient-to-br ${theme.bg} ${theme.border} border overflow-hidden`}>
                   <Collapsible open={isExpanded} onOpenChange={() => togglePerson(person.name)}>
                     <CollapsibleTrigger asChild>
-                      <div className="p-5 cursor-pointer hover:opacity-90 transition-opacity">
+                     <div className="p-5 cursor-pointer hover:opacity-90 transition-opacity">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-11 h-11 rounded-full bg-background/20 flex items-center justify-center">
                               <User className={`w-5 h-5 ${theme.text}`} />
                             </div>
                             <div>
-                              <p className="font-bold text-foreground text-base">{person.name}</p>
+                              {editingPersonName?.oldName === person.name ? (
+                                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                  <Input
+                                    className="h-7 w-32 text-sm"
+                                    value={editingPersonName.newName}
+                                    onChange={e => setEditingPersonName({ ...editingPersonName, newName: e.target.value })}
+                                    onKeyDown={e => { if (e.key === 'Enter') savePersonName(); if (e.key === 'Escape') setEditingPersonName(null); }}
+                                    autoFocus
+                                  />
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={savePersonName}>
+                                    <Check className="w-3.5 h-3.5 text-green-500" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingPersonName(null)}>
+                                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-bold text-foreground text-base">{person.name}</p>
+                                  {isCreator && (
+                                    <button
+                                      className="p-0.5 rounded hover:bg-background/30 transition-colors"
+                                      onClick={e => { e.stopPropagation(); setEditingPersonName({ oldName: person.name, newName: person.name }); }}
+                                    >
+                                      <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                               <p className="text-xs text-muted-foreground">{person.investments.length} contribution{person.investments.length > 1 ? 's' : ''}</p>
                             </div>
                           </div>
