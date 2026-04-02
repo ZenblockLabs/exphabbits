@@ -189,6 +189,16 @@ export function useGroupDetails(groupId: string | undefined) {
     }
   };
 
+  const updateInvestment = async (id: string, data: { amount?: number; description?: string; invested_date?: string }) => {
+    const { error } = await supabase.from('group_investments').update(data as any).eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Investment updated' });
+      await fetchAll();
+    }
+  };
+
   const deleteInvestment = async (id: string) => {
     const { error } = await supabase.from('group_investments').delete().eq('id', id);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -221,7 +231,7 @@ export function useGroupDetails(groupId: string | undefined) {
     group, members, investments, expenses, loading, isCreator,
     totalInvested, totalSpent, balance,
     addMember, updateMemberPermissions, removeMember,
-    addInvestment, addExpense, deleteInvestment, deleteExpense,
+    addInvestment, updateInvestment, addExpense, deleteInvestment, deleteExpense,
     uploadReceipt, fetchAll,
   };
 }

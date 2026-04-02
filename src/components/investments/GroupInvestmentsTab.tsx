@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, User, Pencil, Check, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ interface Props {
   isCreator: boolean;
   onAdd: (data: { member_name: string; member_email?: string; amount: number; description?: string; invested_date: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onUpdate: (id: string, data: { amount?: number; description?: string; invested_date?: string }) => Promise<void>;
   members: GroupMember[];
 }
 
@@ -34,10 +35,18 @@ interface PersonGroup {
   investments: GroupInvestment[];
 }
 
-export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, onAdd, onDelete }) => {
+interface EditState {
+  id: string;
+  amount: string;
+  description: string;
+  invested_date: string;
+}
+
+export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, onAdd, onDelete, onUpdate }) => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ member_name: '', member_email: '', amount: '', description: '', invested_date: new Date().toISOString().split('T')[0] });
   const [expandedPerson, setExpandedPerson] = useState<string | null>(null);
+  const [editing, setEditing] = useState<EditState | null>(null);
 
   const handleSubmit = async () => {
     if (!form.member_name || !form.amount) return;
@@ -50,6 +59,27 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
     });
     setForm({ member_name: '', member_email: '', amount: '', description: '', invested_date: new Date().toISOString().split('T')[0] });
     setOpen(false);
+  };
+
+  const startEdit = (inv: GroupInvestment) => {
+    setEditing({
+      id: inv.id,
+      amount: String(inv.amount),
+      description: inv.description || '',
+      invested_date: inv.invested_date,
+    });
+  };
+
+  const cancelEdit = () => setEditing(null);
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    await onUpdate(editing.id, {
+      amount: parseFloat(editing.amount),
+      description: editing.description || undefined,
+      invested_date: editing.invested_date,
+    });
+    setEditing(null);
   };
 
   const formatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
@@ -160,7 +190,7 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
                       <div className="p-5 cursor-pointer hover:opacity-90 transition-opacity">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <div className={`w-11 h-11 rounded-full bg-background/20 flex items-center justify-center`}>
+                            <div className="w-11 h-11 rounded-full bg-background/20 flex items-center justify-center">
                               <User className={`w-5 h-5 ${theme.text}`} />
                             </div>
                             <div>
@@ -184,24 +214,74 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
                               <TableHead>Amount</TableHead>
                               <TableHead>Date</TableHead>
                               <TableHead>Description</TableHead>
-                              {isCreator && <TableHead className="w-12" />}
+                              {isCreator && <TableHead className="w-24 text-right">Actions</TableHead>}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {person.investments.map(inv => (
-                              <TableRow key={inv.id}>
-                                <TableCell className={`font-semibold ${theme.text}`}>{formatter.format(Number(inv.amount))}</TableCell>
-                                <TableCell>{new Date(inv.invested_date).toLocaleDateString()}</TableCell>
-                                <TableCell className="text-muted-foreground">{inv.description || '-'}</TableCell>
-                                {isCreator && (
-                                  <TableCell>
-                                    <Button variant="ghost" size="icon" onClick={() => onDelete(inv.id)}>
-                                      <Trash2 className="w-4 h-4 text-destructive" />
-                                    </Button>
-                                  </TableCell>
-                                )}
-                              </TableRow>
-                            ))}
+                            {person.investments.map(inv => {
+                              const isEditing = editing?.id === inv.id;
+
+                              if (isEditing && editing) {
+                                return (
+                                  <TableRow key={inv.id}>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        className="h-8 w-24"
+                                        value={editing.amount}
+                                        onChange={e => setEditing({ ...editing, amount: e.target.value })}
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="date"
+                                        className="h-8 w-32"
+                                        value={editing.invested_date}
+                                        onChange={e => setEditing({ ...editing, invested_date: e.target.value })}
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Input
+                                        className="h-8"
+                                        value={editing.description}
+                                        placeholder="Description"
+                                        onChange={e => setEditing({ ...editing, description: e.target.value })}
+                                      />
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <div className="flex justify-end gap-1">
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveEdit}>
+                                          <Check className="w-4 h-4 text-green-500" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={cancelEdit}>
+                                          <X className="w-4 h-4 text-muted-foreground" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              }
+
+                              return (
+                                <TableRow key={inv.id}>
+                                  <TableCell className={`font-semibold ${theme.text}`}>{formatter.format(Number(inv.amount))}</TableCell>
+                                  <TableCell>{new Date(inv.invested_date).toLocaleDateString()}</TableCell>
+                                  <TableCell className="text-muted-foreground">{inv.description || '-'}</TableCell>
+                                  {isCreator && (
+                                    <TableCell className="text-right">
+                                      <div className="flex justify-end gap-1">
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(inv)}>
+                                          <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(inv.id)}>
+                                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                              );
+                            })}
                           </TableBody>
                         </Table>
                       </div>
