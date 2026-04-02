@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import dashboardAccent from '@/assets/dashboard-accent.mp4.asset.json';
 import { Wallet, TrendingUp, Fuel, DollarSign, ChevronLeft, ChevronRight, Keyboard } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { calculateYearTotals, MONTHS, getTopExpenses } from '@/data/expenseData';
@@ -199,6 +200,18 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        
+        {/* Decorative accent video */}
+        <div className="absolute -bottom-4 -right-4 w-48 h-48 lg:w-64 lg:h-64 rounded-2xl overflow-hidden opacity-30 pointer-events-none">
+          <video
+            src={dashboardAccent.url}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
+        </div>
       </motion.div>
 
       {/* Stats Grid */}
