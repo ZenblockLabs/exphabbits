@@ -49,6 +49,7 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
   const [form, setForm] = useState({ member_name: '', member_email: '', amount: '', description: '', invested_date: new Date().toISOString().split('T')[0] });
   const [expandedPerson, setExpandedPerson] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditState | null>(null);
+  const [editingPersonName, setEditingPersonName] = useState<{ oldName: string; newName: string } | null>(null);
 
   const handleSubmit = async () => {
     if (!form.member_name || !form.amount) return;
