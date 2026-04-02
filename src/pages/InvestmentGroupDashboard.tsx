@@ -10,6 +10,7 @@ import { GroupMembersTab } from '@/components/investments/GroupMembersTab';
 import { GroupInvestmentsTab } from '@/components/investments/GroupInvestmentsTab';
 import { GroupExpensesTab } from '@/components/investments/GroupExpensesTab';
 import { GroupActivityLog } from '@/components/investments/GroupActivityLog';
+import { motion } from 'framer-motion';
 
 const InvestmentGroupDashboard: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
