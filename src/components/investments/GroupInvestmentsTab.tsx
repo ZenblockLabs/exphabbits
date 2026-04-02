@@ -25,7 +25,7 @@ interface Props {
   isCreator: boolean;
   onAdd: (data: { member_name: string; member_email?: string; amount: number; description?: string; invested_date: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  onUpdate: (id: string, data: { amount?: number; description?: string; invested_date?: string }) => Promise<void>;
+  onUpdate: (id: string, data: { amount?: number; description?: string; invested_date?: string; member_name?: string }) => Promise<void>;
   members: GroupMember[];
 }
 
