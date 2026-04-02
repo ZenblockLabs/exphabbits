@@ -51,40 +51,37 @@ const InvestmentGroupDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
-            <TrendingUp className="w-4 h-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatter.format(totalInvested)}</div>
-            <p className="text-xs text-muted-foreground">{investments.length} contributions</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-            <TrendingDown className="w-4 h-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{formatter.format(totalSpent)}</div>
-            <p className="text-xs text-muted-foreground">{expenses.length} expenses</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Balance</CardTitle>
-            <Wallet className="w-4 h-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatter.format(balance)}
-            </div>
-            <p className="text-xs text-muted-foreground">{activeMembers.length + 1} members</p>
-          </CardContent>
-        </Card>
+        {[
+          { title: 'Total Invested', icon: <TrendingUp className="w-4 h-4 text-green-500" />, value: formatter.format(totalInvested), color: 'text-green-600', sub: `${investments.length} contributions` },
+          { title: 'Total Spent', icon: <TrendingDown className="w-4 h-4 text-red-500" />, value: formatter.format(totalSpent), color: 'text-red-600', sub: `${expenses.length} expenses` },
+          { title: 'Balance', icon: <Wallet className="w-4 h-4 text-primary" />, value: formatter.format(balance), color: balance >= 0 ? 'text-green-600' : 'text-red-600', sub: `${activeMembers.length + 1} members` },
+        ].map((card, i) => (
+          <motion.div
+            key={card.title}
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: i * 0.12, duration: 0.4, type: 'spring', stiffness: 120 }}
+          >
+            <Card className="hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+                {card.icon}
+              </CardHeader>
+              <CardContent>
+                <motion.div
+                  className={`text-2xl font-bold ${card.color}`}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: i * 0.12 + 0.2, type: 'spring', stiffness: 200 }}
+                >
+                  {card.value}
+                </motion.div>
+                <p className="text-xs text-muted-foreground">{card.sub}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
 
       {/* Tabs */}
