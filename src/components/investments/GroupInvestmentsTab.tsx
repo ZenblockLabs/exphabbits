@@ -234,6 +234,12 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
                                         value={editing.amount}
                                         onChange={e => setEditing({ ...editing, amount: e.target.value })}
                                       />
+                                      <Input
+                                        className="h-8 w-28 mt-1"
+                                        value={editing.member_name}
+                                        placeholder="Name"
+                                        onChange={e => setEditing({ ...editing, member_name: e.target.value })}
+                                      />
                                     </TableCell>
                                     <TableCell>
                                       <Input
