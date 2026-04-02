@@ -25,7 +25,7 @@ interface Props {
   isCreator: boolean;
   onAdd: (data: { member_name: string; member_email?: string; amount: number; description?: string; invested_date: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  onUpdate: (id: string, data: { amount?: number; description?: string; invested_date?: string }) => Promise<void>;
+  onUpdate: (id: string, data: { amount?: number; description?: string; invested_date?: string; member_name?: string }) => Promise<void>;
   members: GroupMember[];
 }
 
@@ -40,6 +40,7 @@ interface EditState {
   amount: string;
   description: string;
   invested_date: string;
+  member_name: string;
 }
 
 export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, onAdd, onDelete, onUpdate }) => {
@@ -67,6 +68,7 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
       amount: String(inv.amount),
       description: inv.description || '',
       invested_date: inv.invested_date,
+      member_name: inv.member_name,
     });
   };
 
@@ -78,6 +80,7 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
       amount: parseFloat(editing.amount),
       description: editing.description || undefined,
       invested_date: editing.invested_date,
+      member_name: editing.member_name,
     });
     setEditing(null);
   };
@@ -230,6 +233,12 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
                                         className="h-8 w-24"
                                         value={editing.amount}
                                         onChange={e => setEditing({ ...editing, amount: e.target.value })}
+                                      />
+                                      <Input
+                                        className="h-8 w-28 mt-1"
+                                        value={editing.member_name}
+                                        placeholder="Name"
+                                        onChange={e => setEditing({ ...editing, member_name: e.target.value })}
                                       />
                                     </TableCell>
                                     <TableCell>

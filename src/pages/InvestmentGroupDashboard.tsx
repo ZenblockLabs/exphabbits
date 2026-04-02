@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, TrendingDown, Wallet, Users, Receipt, PlusCircle } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Wallet, Users, Receipt, PlusCircle, Pencil, Check, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGroupDetails } from '@/hooks/useInvestmentGroups';
@@ -17,6 +18,8 @@ const InvestmentGroupDashboard: React.FC = () => {
   const navigate = useNavigate();
   const details = useGroupDetails(groupId);
   const { group, members, investments, expenses, loading, isCreator, totalInvested, totalSpent, balance } = details;
+  const [editingName, setEditingName] = useState(false);
+  const [nameForm, setNameForm] = useState({ name: '', description: '' });
 
   if (loading) {
     return (
@@ -39,16 +42,45 @@ const InvestmentGroupDashboard: React.FC = () => {
   const activeMembers = members.filter(m => m.status === 'active');
   const formatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
 
+  const startEditName = () => {
+    setNameForm({ name: group.name, description: group.description || '' });
+    setEditingName(true);
+  };
+
+  const saveGroupName = async () => {
+    if (!nameForm.name.trim()) return;
+    await details.updateGroup({ name: nameForm.name.trim(), description: nameForm.description.trim() || undefined });
+    setEditingName(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate('/investments')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
-          {group.description && <p className="text-sm text-muted-foreground">{group.description}</p>}
-        </div>
+        {editingName ? (
+          <div className="flex items-center gap-2 flex-1">
+            <div className="space-y-1 flex-1">
+              <Input value={nameForm.name} onChange={e => setNameForm(p => ({ ...p, name: e.target.value }))} placeholder="Group name" className="text-lg font-bold" />
+              <Input value={nameForm.description} onChange={e => setNameForm(p => ({ ...p, description: e.target.value }))} placeholder="Description (optional)" className="text-sm" />
+            </div>
+            <Button variant="ghost" size="icon" onClick={saveGroupName}><Check className="w-4 h-4 text-green-500" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => setEditingName(false)}><X className="w-4 h-4 text-muted-foreground" /></Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
+              {group.description && <p className="text-sm text-muted-foreground">{group.description}</p>}
+            </div>
+            {isCreator && (
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={startEditName}>
+                <Pencil className="w-4 h-4 text-muted-foreground" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
