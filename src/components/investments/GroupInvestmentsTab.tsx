@@ -215,6 +215,7 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
                         <Table>
                           <TableHeader>
                             <TableRow>
+                             <TableHead>Name</TableHead>
                               <TableHead>Amount</TableHead>
                               <TableHead>Date</TableHead>
                               <TableHead>Description</TableHead>
