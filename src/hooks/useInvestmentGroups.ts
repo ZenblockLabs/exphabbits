@@ -189,12 +189,23 @@ export function useGroupDetails(groupId: string | undefined) {
     }
   };
 
-  const updateInvestment = async (id: string, data: { amount?: number; description?: string; invested_date?: string }) => {
+  const updateInvestment = async (id: string, data: { amount?: number; description?: string; invested_date?: string; member_name?: string }) => {
     const { error } = await supabase.from('group_investments').update(data as any).eq('id', id);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Investment updated' });
+      await fetchAll();
+    }
+  };
+
+  const updateGroup = async (data: { name?: string; description?: string }) => {
+    if (!groupId) return;
+    const { error } = await supabase.from('investment_groups').update(data as any).eq('id', groupId);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Group updated' });
       await fetchAll();
     }
   };
