@@ -205,6 +205,16 @@ export function useGroupDetails(groupId: string | undefined) {
     else await fetchAll();
   };
 
+  const updateExpense = async (id: string, data: { amount?: number; category?: string; spent_by?: string; description?: string; expense_date?: string }) => {
+    const { error } = await supabase.from('group_expenses').update(data as any).eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Expense updated' });
+      await fetchAll();
+    }
+  };
+
   const deleteExpense = async (id: string) => {
     const { error } = await supabase.from('group_expenses').delete().eq('id', id);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
