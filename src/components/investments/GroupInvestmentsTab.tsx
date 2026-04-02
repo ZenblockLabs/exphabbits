@@ -68,6 +68,7 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
       amount: String(inv.amount),
       description: inv.description || '',
       invested_date: inv.invested_date,
+      member_name: inv.member_name,
     });
   };
 
@@ -79,6 +80,7 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
       amount: parseFloat(editing.amount),
       description: editing.description || undefined,
       invested_date: editing.invested_date,
+      member_name: editing.member_name,
     });
     setEditing(null);
   };
