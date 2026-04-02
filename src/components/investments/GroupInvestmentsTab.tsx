@@ -40,6 +40,7 @@ interface EditState {
   amount: string;
   description: string;
   invested_date: string;
+  member_name: string;
 }
 
 export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, onAdd, onDelete, onUpdate }) => {
