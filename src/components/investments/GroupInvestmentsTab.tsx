@@ -87,6 +87,13 @@ export const GroupInvestmentsTab: React.FC<Props> = ({ investments, isCreator, o
     setEditing(null);
   };
 
+  const savePersonName = async () => {
+    if (!editingPersonName || !editingPersonName.newName.trim()) return;
+    const toUpdate = investments.filter(inv => inv.member_name.trim().toLowerCase() === editingPersonName.oldName.trim().toLowerCase());
+    await Promise.all(toUpdate.map(inv => onUpdate(inv.id, { member_name: editingPersonName.newName.trim() })));
+    setEditingPersonName(null);
+  };
+
   const formatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
 
   const groupedByPerson = useMemo<PersonGroup[]>(() => {
