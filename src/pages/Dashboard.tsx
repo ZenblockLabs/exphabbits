@@ -124,93 +124,114 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-8 touch-pan-y" {...swipeHandlers}>
       {/* Hero Section */}
+      {/* Hero Section with Video Background */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 lg:p-8 border border-primary/10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative overflow-hidden rounded-2xl border border-primary/20 shadow-lg"
       >
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl lg:text-3xl font-bold mb-2">
-              Welcome back! 👋
-            </h1>
-            <p className="text-muted-foreground max-w-lg">
-              Here's an overview of your expenses. Track, analyze, and manage your spending habits effectively.
-            </p>
-          </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Month:</span>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={handlePrevMonth}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <span className="w-16 text-center text-sm font-medium">
-                        {selectedMonth === 'All' ? 'All' : selectedMonth.slice(0, 3)}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={handleNextMonth}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Keyboard className="h-3.5 w-3.5 text-muted-foreground/50 hidden sm:block" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="flex flex-col gap-1 text-xs">
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded border">←</kbd>
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded border">→</kbd>
-                    <span>Month</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded border">↑</kbd>
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded border">↓</kbd>
-                    <span>Year</span>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Year:</span>
-              <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(Number(val))}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {allYears.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        
-        {/* Decorative accent video */}
-        <div className="absolute -bottom-4 -right-4 w-48 h-48 lg:w-64 lg:h-64 rounded-2xl overflow-hidden opacity-30 pointer-events-none">
+        {/* Full video background */}
+        <div className="absolute inset-0 pointer-events-none">
           <video
-            src={dashboardAccent.url}
+            src={dashboardHeroVideo.url}
             autoPlay
             loop
             muted
             playsInline
             className="w-full h-full object-cover"
           />
+          {/* Gradient overlay for readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/75 to-background/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-background/30" />
+        </div>
+
+        <div className="relative z-10 p-6 lg:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="font-display text-2xl lg:text-3xl font-bold mb-2"
+              >
+                Welcome back! 👋
+              </motion.h1>
+              <motion.p 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.35, duration: 0.5 }}
+                className="text-muted-foreground max-w-lg"
+              >
+                Here's an overview of your expenses. Track, analyze, and manage your spending habits effectively.
+              </motion.p>
+            </div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="flex items-center gap-4 flex-wrap"
+            >
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Month:</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 backdrop-blur-sm bg-background/50"
+                          onClick={handlePrevMonth}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="w-16 text-center text-sm font-medium">
+                          {selectedMonth === 'All' ? 'All' : selectedMonth.slice(0, 3)}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 backdrop-blur-sm bg-background/50"
+                          onClick={handleNextMonth}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Keyboard className="h-3.5 w-3.5 text-muted-foreground/50 hidden sm:block" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="flex flex-col gap-1 text-xs">
+                    <div className="flex items-center gap-2">
+                      <kbd className="px-1.5 py-0.5 bg-muted rounded border">←</kbd>
+                      <kbd className="px-1.5 py-0.5 bg-muted rounded border">→</kbd>
+                      <span>Month</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <kbd className="px-1.5 py-0.5 bg-muted rounded border">↑</kbd>
+                      <kbd className="px-1.5 py-0.5 bg-muted rounded border">↓</kbd>
+                      <span>Year</span>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Year:</span>
+                <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(Number(val))}>
+                  <SelectTrigger className="w-[120px] backdrop-blur-sm bg-background/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allYears.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </motion.div>
 
