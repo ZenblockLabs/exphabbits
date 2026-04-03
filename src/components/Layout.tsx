@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { NotificationBell } from '@/components/NotificationBell';
+import { BottomTabBar } from '@/components/BottomTabBar';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import {
   Collapsible,
