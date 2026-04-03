@@ -578,7 +578,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <div className="p-4 lg:p-8 pb-24 lg:pb-8">
+        <div className="p-4 lg:p-8 pb-24 lg:pb-8" {...swipeHandlers}>
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 10 }}
