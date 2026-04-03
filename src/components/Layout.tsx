@@ -569,6 +569,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Bottom Tab Bar for Mobile */}
         <BottomTabBar />
+        <NotificationPrompt />
       </main>
     </div>
   );
