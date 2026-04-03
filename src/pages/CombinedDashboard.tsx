@@ -712,6 +712,9 @@ const CombinedDashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Currency Converter */}
+        <CurrencyConverter />
       </motion.div>
     </div>
   );
