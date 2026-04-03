@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { checkAndSendReminders } from '@/utils/notifications';
 
 export type HabitCategory = 'health' | 'productivity' | 'learning' | 'mindfulness' | 'fitness' | 'other';
 
@@ -133,32 +134,22 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     fetchHabits();
   }, [user]);
 
-  // Check and send notifications
+  // Check and send notifications using browser push
   useEffect(() => {
-    if (notificationPermission !== 'granted') return;
+    if (notificationPermission !== 'granted' || habits.length === 0) return;
 
     const checkReminders = () => {
-      const now = new Date();
-      const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      const currentDay = now.getDay();
-      const today = now.toISOString().split('T')[0];
-
-      habits.forEach((habit) => {
-        if (
-          habit.reminder?.enabled &&
-          habit.reminder.time === currentTime &&
-          habit.reminder.days.includes(currentDay) &&
-          !habit.completedDates.includes(today)
-        ) {
-          new Notification(`⏰ Habit Reminder: ${habit.name}`, {
-            body: habit.description || 'Time to work on your habit!',
-            icon: '/favicon.ico',
-            tag: habit.id,
-          });
-        }
-      });
+      const reminders = habits
+        .filter(h => h.reminder?.enabled && h.reminder.time)
+        .map(h => ({
+          habitName: h.name,
+          reminderTime: h.reminder!.time,
+          habitId: h.id,
+        }));
+      checkAndSendReminders(reminders);
     };
 
+    checkReminders();
     const interval = setInterval(checkReminders, 60000);
     return () => clearInterval(interval);
   }, [habits, notificationPermission]);

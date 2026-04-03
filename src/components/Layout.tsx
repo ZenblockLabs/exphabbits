@@ -1,4 +1,4 @@
-// Layout component - v8 - with admin nav link
+// Layout component - v9 - with bottom tab bar
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,7 +32,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { NotificationBell } from '@/components/NotificationBell';
+import { BottomTabBar } from '@/components/BottomTabBar';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
+import { NotificationPrompt } from '@/components/NotificationPrompt';
 import {
   Collapsible,
   CollapsibleContent,
@@ -554,7 +556,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <div className="p-4 lg:p-8">
+        <div className="p-4 lg:p-8 pb-24 lg:pb-8">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 10 }}
@@ -564,6 +566,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             {children}
           </motion.div>
         </div>
+
+        {/* Bottom Tab Bar for Mobile */}
+        <BottomTabBar />
+        <NotificationPrompt />
       </main>
     </div>
   );
