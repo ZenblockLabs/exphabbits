@@ -1,6 +1,6 @@
 // Layout component - v9 - with bottom tab bar
 import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -35,6 +35,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { NotificationPrompt } from '@/components/NotificationPrompt';
+import { useSwipe } from '@/hooks/useSwipe';
 import {
   Collapsible,
   CollapsibleContent,
@@ -164,7 +165,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAdmin } = useAdmin();
+
+  // Swipe navigation between bottom tab routes
+  const tabRoutes = ['/', '/expenses', '/habits', '/notebook', '/settings'];
+  const currentTabIndex = tabRoutes.findIndex(r => 
+    r === '/' ? location.pathname === '/' : location.pathname.startsWith(r)
+  );
+
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: () => {
+      if (currentTabIndex >= 0 && currentTabIndex < tabRoutes.length - 1) {
+        navigate(tabRoutes[currentTabIndex + 1]);
+      }
+    },
+    onSwipeRight: () => {
+      if (currentTabIndex > 0) {
+        navigate(tabRoutes[currentTabIndex - 1]);
+      }
+    },
+    minSwipeDistance: 80,
+  });
 
   // Listen for storage changes from Settings page
   useEffect(() => {
@@ -556,7 +578,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <div className="p-4 lg:p-8 pb-24 lg:pb-8">
+        <div className="p-4 lg:p-8 pb-24 lg:pb-8" {...swipeHandlers}>
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 10 }}
