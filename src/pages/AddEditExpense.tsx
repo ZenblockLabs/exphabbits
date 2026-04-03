@@ -325,6 +325,17 @@ const AddEditExpense: React.FC = () => {
         </div>
       </motion.div>
 
+      {/* Quick Currency Converter */}
+      <QuickCurrencyConvert
+        onConvert={(inrAmount) => {
+          toast({
+            title: 'Converted!',
+            description: `₹${inrAmount} copied to clipboard — paste into any field below.`,
+          });
+          navigator.clipboard?.writeText(String(inrAmount));
+        }}
+      />
+
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {renderSimpleCategory('snacks', 'Snacks', '🍿')}
