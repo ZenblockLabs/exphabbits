@@ -167,6 +167,7 @@ const Dashboard: React.FC = () => {
                 Here's an overview of your expenses. Track, analyze, and manage your spending habits effectively.
               </motion.p>
               <MotivationalQuote />
+            </div>
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
