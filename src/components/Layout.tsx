@@ -35,6 +35,8 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { NotificationPrompt } from '@/components/NotificationPrompt';
+import { useSwipe } from '@/hooks/useSwipe';
+import { useNavigate } from 'react-router-dom';
 import {
   Collapsible,
   CollapsibleContent,
