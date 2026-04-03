@@ -212,21 +212,44 @@ const CombinedDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
+      {/* Hero Section with Video Background */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 lg:p-8 border border-primary/10"
+        className="relative overflow-hidden rounded-2xl border border-primary/20 shadow-lg"
       >
-        <div className="relative z-10">
-          <h1 className="font-display text-2xl lg:text-3xl font-bold mb-2">
-            Dashboard Overview 📊
-          </h1>
-          <p className="text-muted-foreground max-w-lg">
-            Your combined view of expenses and habits. Stay on top of your finances and build better habits.
-          </p>
+        {/* Full video background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <video
+            src={dashboardHeroVideo.url}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/75 to-background/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-background/30" />
         </div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+
+        <div className="relative z-10 p-6 lg:p-8">
+          <motion.h1
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="font-display text-2xl lg:text-3xl font-bold mb-2"
+          >
+            Dashboard Overview 📊
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.35, duration: 0.5 }}
+            className="text-muted-foreground max-w-lg"
+          >
+            Your combined view of expenses and habits. Stay on top of your finances and build better habits.
+          </motion.p>
+        </div>
       </motion.div>
 
       {/* Two-column layout for Expenses and Habits */}
