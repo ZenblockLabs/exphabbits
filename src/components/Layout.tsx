@@ -34,6 +34,7 @@ import { useExpenses } from '@/contexts/ExpenseContext';
 import { NotificationBell } from '@/components/NotificationBell';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
+import { NotificationPrompt } from '@/components/NotificationPrompt';
 import {
   Collapsible,
   CollapsibleContent,
