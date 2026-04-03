@@ -1,4 +1,4 @@
-// Layout component - v8 - with admin nav link
+// Layout component - v9 - with bottom tab bar
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
