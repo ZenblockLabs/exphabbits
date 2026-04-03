@@ -165,7 +165,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAdmin } = useAdmin();
+
+  // Swipe navigation between bottom tab routes
+  const tabRoutes = ['/', '/expenses', '/habits', '/notebook', '/settings'];
+  const currentTabIndex = tabRoutes.findIndex(r => 
+    r === '/' ? location.pathname === '/' : location.pathname.startsWith(r)
+  );
+
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: () => {
+      if (currentTabIndex >= 0 && currentTabIndex < tabRoutes.length - 1) {
+        navigate(tabRoutes[currentTabIndex + 1]);
+      }
+    },
+    onSwipeRight: () => {
+      if (currentTabIndex > 0) {
+        navigate(tabRoutes[currentTabIndex - 1]);
+      }
+    },
+    minSwipeDistance: 80,
+  });
 
   // Listen for storage changes from Settings page
   useEffect(() => {
