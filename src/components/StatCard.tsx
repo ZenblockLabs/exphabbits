@@ -54,14 +54,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <motion.p
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: delay + 0.2 }}
-            className="text-2xl lg:text-3xl font-display font-bold tracking-tight"
-          >
-            {formatCurrency(value)}
-          </motion.p>
+          <AnimatedCurrency value={value} delay={delay} />
           {subtitle && (
             <p className="text-xs text-muted-foreground">{subtitle}</p>
           )}
