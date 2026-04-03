@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import QuickCurrencyConvert from '@/components/QuickCurrencyConvert';
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
@@ -323,6 +324,17 @@ const AddEditExpense: React.FC = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Quick Currency Converter */}
+      <QuickCurrencyConvert
+        onConvert={(inrAmount) => {
+          toast({
+            title: 'Converted!',
+            description: `₹${inrAmount} copied to clipboard — paste into any field below.`,
+          });
+          navigator.clipboard?.writeText(String(inrAmount));
+        }}
+      />
 
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
