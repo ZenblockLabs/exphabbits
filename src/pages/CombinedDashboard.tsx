@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import dashboardHeroVideo from '@/assets/dashboard-hero-video.mp4.asset.json';
+import MotivationalQuote from '@/components/MotivationalQuote';
 import { Wallet, Target, TrendingUp, Fuel, DollarSign, Flame, CheckCircle2, Calendar, BarChart3, Crown, CalendarDays } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { useHabits } from '@/contexts/HabitContext';
@@ -249,6 +250,7 @@ const CombinedDashboard: React.FC = () => {
           >
             Your combined view of expenses and habits. Stay on top of your finances and build better habits.
           </motion.p>
+          <MotivationalQuote />
         </div>
       </motion.div>
 
