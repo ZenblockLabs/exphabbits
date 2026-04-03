@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,52 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const AnimatedCurrency: React.FC<{ value: number; delay: number }> = ({ value, delay }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const prevValue = useRef(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setHasStarted(true), delay * 1000 + 200);
+    return () => clearTimeout(timer);
+  }, [delay]);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+    
+    const duration = 1200;
+    const startValue = prevValue.current !== value ? prevValue.current : 0;
+    const startTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(startValue + (value - startValue) * eased);
+      setDisplayValue(current);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+    prevValue.current = value;
+  }, [value, hasStarted]);
+
+  return (
+    <motion.p
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, delay: delay + 0.2 }}
+      className="text-2xl lg:text-3xl font-display font-bold tracking-tight"
+    >
+      {formatCurrency(hasStarted ? displayValue : 0)}
+    </motion.p>
+  );
+};
+
 export const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
@@ -54,14 +100,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <motion.p
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: delay + 0.2 }}
-            className="text-2xl lg:text-3xl font-display font-bold tracking-tight"
-          >
-            {formatCurrency(value)}
-          </motion.p>
+          <AnimatedCurrency value={value} delay={delay} />
           {subtitle && (
             <p className="text-xs text-muted-foreground">{subtitle}</p>
           )}
