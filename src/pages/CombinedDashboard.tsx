@@ -250,7 +250,7 @@ const CombinedDashboard: React.FC = () => {
           >
             Your combined view of expenses and habits. Stay on top of your finances and build better habits.
           </motion.p>
-        </div>
+          <MotivationalQuote />
       </motion.div>
 
       {/* Two-column layout for Expenses and Habits */}
