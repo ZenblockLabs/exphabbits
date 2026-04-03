@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react'; // v2
 import { motion } from 'framer-motion';
 import dashboardHeroVideo from '@/assets/dashboard-hero-video.mp4.asset.json';
+import MotivationalQuote from '@/components/MotivationalQuote';
 import { Wallet, TrendingUp, Fuel, DollarSign, ChevronLeft, ChevronRight, Keyboard } from 'lucide-react';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { calculateYearTotals, MONTHS, getTopExpenses } from '@/data/expenseData';
