@@ -64,6 +64,7 @@ const MindPuzzleGame: React.FC = () => {
     if (tile !== sequence[playerIndex]) {
       setStatus('failed');
       setPlayerIndex(0);
+      clearProgress(gameMeta);
       return;
     }
 
