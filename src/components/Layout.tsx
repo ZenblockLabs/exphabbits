@@ -24,6 +24,7 @@ import {
   User,
   BookOpen,
   RefreshCw,
+  Brain,
   Shield
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -147,6 +148,7 @@ const navGroups: NavGroup[] = [
     icon: Handshake,
     items: [
       { to: '/investments', icon: TrendingUp, label: 'Groups' },
+      { to: '/games', icon: Brain, label: 'Games' },
     ],
   },
 ];
