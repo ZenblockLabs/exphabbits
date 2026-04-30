@@ -35,6 +35,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
 import { NotificationPrompt } from '@/components/NotificationPrompt';
+import { ThemeQuickSwitch } from '@/components/ThemeQuickSwitch';
 import { useSwipe } from '@/hooks/useSwipe';
 import {
   Collapsible,
@@ -571,6 +572,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 location.pathname === '/recurring') && (
                 <SearchIconButton />
               )}
+              <ThemeQuickSwitch />
               <NotificationBell />
               <ProfileDropdown />
             </div>

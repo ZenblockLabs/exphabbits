@@ -51,6 +51,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { BADGE_SOUND_ENABLED_KEY } from '@/hooks/useBadgeSound';
 import { PinSetup } from '@/components/PinSetup';
+import { DataExportPanel } from '@/components/DataExportPanel';
 
 const VISIBILITY_STORAGE_KEY = 'sidebar-visibility-settings';
 const COLLAPSED_STORAGE_KEY = 'sidebar-collapsed';
@@ -376,6 +377,8 @@ const Settings: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <DataExportPanel />
 
       {/* Menu Visibility Section */}
       <Card>
