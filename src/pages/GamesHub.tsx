@@ -132,6 +132,8 @@ const GamesHub: React.FC = () => {
           No games in this category yet.
         </div>
       )}
+
+      <GamesLeaderboard />
     </div>
   );
 };
