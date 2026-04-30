@@ -39,13 +39,14 @@ const GamesHub: React.FC = () => {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter games by category">
         {(['All', ...GAME_CATEGORIES] as const).map(cat => (
           <Button
             key={cat}
             variant={filter === cat ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter(cat)}
+            aria-pressed={filter === cat}
           >
             {cat}
           </Button>
