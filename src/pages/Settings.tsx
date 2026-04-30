@@ -88,7 +88,10 @@ const navGroups = [
     label: 'Games',
     icon: Brain,
     items: [
-      { to: '/games', icon: Brain, label: 'Games' },
+      { to: '/games', icon: Brain, label: 'All Games' },
+      { to: '/games/mind-puzzle', icon: Brain, label: 'Mind Puzzle' },
+      { to: '/games/number-memory', icon: Brain, label: 'Number Memory' },
+      { to: '/games/reaction-time', icon: Brain, label: 'Reaction Time' },
     ],
   },
   {

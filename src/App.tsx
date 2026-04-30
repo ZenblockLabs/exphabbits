@@ -29,6 +29,9 @@ import NotFound from "./pages/NotFound";
 import CombinedDashboard from "./pages/CombinedDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import MindPuzzleGame from "./pages/MindPuzzleGame";
+import GamesHub from "./pages/GamesHub";
+import NumberMemoryGame from "./pages/games/NumberMemoryGame";
+import ReactionTimeGame from "./pages/games/ReactionTimeGame";
 
 const queryClient = new QueryClient();
 
@@ -118,7 +121,22 @@ function App() {
                     } />
                     <Route path="/games" element={
                       <ProtectedRoute>
+                        <Layout><GamesHub /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/games/mind-puzzle" element={
+                      <ProtectedRoute>
                         <Layout><MindPuzzleGame /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/games/number-memory" element={
+                      <ProtectedRoute>
+                        <Layout><NumberMemoryGame /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/games/reaction-time" element={
+                      <ProtectedRoute>
+                        <Layout><ReactionTimeGame /></Layout>
                       </ProtectedRoute>
                     } />
                     
