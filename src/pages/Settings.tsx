@@ -82,6 +82,12 @@ const navGroups = [
     icon: Receipt,
     items: [
       { to: '/investments', icon: LayoutDashboard, label: 'Groups' },
+    ],
+  },
+  {
+    label: 'Games',
+    icon: Brain,
+    items: [
       { to: '/games', icon: Brain, label: 'Games' },
     ],
   },

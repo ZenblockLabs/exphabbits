@@ -148,7 +148,13 @@ const navGroups: NavGroup[] = [
     icon: Handshake,
     items: [
       { to: '/investments', icon: TrendingUp, label: 'Groups' },
-      { to: '/games', icon: Brain, label: 'Games' },
+    ],
+  },
+  {
+    label: 'Games',
+    icon: Brain,
+    items: [
+      { to: '/games', icon: Brain, label: 'Mind Puzzle' },
     ],
   },
 ];
