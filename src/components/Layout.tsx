@@ -25,6 +25,10 @@ import {
   BookOpen,
   RefreshCw,
   Brain,
+  Hash,
+  Zap,
+  Gamepad2,
+  Play,
   Shield
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -152,9 +156,12 @@ const navGroups: NavGroup[] = [
   },
   {
     label: 'Games',
-    icon: Brain,
+    icon: Gamepad2,
     items: [
-      { to: '/games', icon: Brain, label: 'Mind Puzzle' },
+      { to: '/games', icon: Gamepad2, label: 'All Games' },
+      { to: '/games/mind-puzzle', icon: Brain, label: 'Mind Puzzle' },
+      { to: '/games/number-memory', icon: Hash, label: 'Number Memory' },
+      { to: '/games/reaction-time', icon: Zap, label: 'Reaction Time' },
     ],
   },
 ];
