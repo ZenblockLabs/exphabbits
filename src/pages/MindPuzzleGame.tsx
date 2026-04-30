@@ -4,10 +4,12 @@ import { Brain, RotateCcw, Sparkles, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { getGameBySlug, writeBestScore, writeProgress, clearProgress } from '@/data/gamesRegistry';
 
 const TILE_COUNT = 9;
 const ROUND_DELAY = 650;
 const BEST_SCORE_KEY = 'habex-mind-puzzle-best-score';
+const gameMeta = getGameBySlug('mind-puzzle')!;
 
 type GameStatus = 'ready' | 'showing' | 'input' | 'success' | 'failed';
 
@@ -69,8 +71,9 @@ const MindPuzzleGame: React.FC = () => {
       const score = sequence.length;
       if (score > bestScore) {
         setBestScore(score);
-        localStorage.setItem(BEST_SCORE_KEY, String(score));
+        writeBestScore(gameMeta, score);
       }
+      writeProgress(gameMeta, { level: score + 1, updatedAt: Date.now() });
       setStatus('success');
       window.setTimeout(() => nextRound(sequence), 900);
       return;
