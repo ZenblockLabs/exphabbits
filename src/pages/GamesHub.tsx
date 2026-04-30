@@ -15,6 +15,7 @@ import {
   readProgress,
   clearProgress,
 } from '@/data/gamesRegistry';
+import GamesLeaderboard from '@/components/GamesLeaderboard';
 
 const GamesHub: React.FC = () => {
   const [filter, setFilter] = useState<'All' | GameCategory>('All');
