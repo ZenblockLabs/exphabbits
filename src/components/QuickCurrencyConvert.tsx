@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Globe } from 'lucide-react';
+import { ArrowRight, Globe, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -33,8 +35,20 @@ const FALLBACK_RATES: Record<string, number> = {
 const CACHE_KEY = 'habex-exchange-rates';
 const CACHE_DURATION = 60 * 60 * 1000;
 
+type RateSource = 'live' | 'cached' | 'fallback';
+
+export interface CurrencyConversionDetails {
+  inrAmount: number;
+  foreignAmount: number;
+  currency: string;
+  symbol: string;
+  rate: number;
+  source: RateSource;
+  storeOriginal: boolean;
+}
+
 interface QuickCurrencyConvertProps {
-  onConvert: (inrAmount: number) => void;
+  onConvert: (details: CurrencyConversionDetails) => void;
 }
 
 const QuickCurrencyConvert: React.FC<QuickCurrencyConvertProps> = ({ onConvert }) => {
@@ -42,39 +56,55 @@ const QuickCurrencyConvert: React.FC<QuickCurrencyConvertProps> = ({ onConvert }
   const [fromCurrency, setFromCurrency] = useState('USD');
   const [foreignAmount, setForeignAmount] = useState('');
   const [rates, setRates] = useState<Record<string, number>>(FALLBACK_RATES);
+  const [rateSource, setRateSource] = useState<RateSource>('fallback');
   const [loading, setLoading] = useState(false);
+  const [storeOriginal, setStoreOriginal] = useState(true);
 
   const fetchRates = useCallback(async () => {
+    const forceFallback = new URLSearchParams(window.location.search).has('forceRatesFallback');
+
     try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_DURATION && data) {
-          const inrRates: Record<string, number> = {};
-          CURRENCIES.forEach(c => {
-            if (data[c.code] && data['INR']) {
-              inrRates[c.code] = data['INR'] / data[c.code];
+      if (!forceFallback) {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_DURATION && data) {
+            const inrRates: Record<string, number> = {};
+            CURRENCIES.forEach(c => {
+              if (data[c.code] && data['INR']) {
+                inrRates[c.code] = data['INR'] / data[c.code];
+              }
+            });
+            if (Object.keys(inrRates).length > 0) {
+              setRates(inrRates);
+              setRateSource('cached');
             }
-          });
-          if (Object.keys(inrRates).length > 0) setRates(inrRates);
-          return;
+            return;
+          }
         }
       }
+
       setLoading(true);
+      if (forceFallback) throw new Error('Fallback mode requested');
+
       const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-      if (res.ok) {
-        const json = await res.json();
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: json.rates, timestamp: Date.now() }));
-        const inrRates: Record<string, number> = {};
-        CURRENCIES.forEach(c => {
-          if (json.rates[c.code] && json.rates['INR']) {
-            inrRates[c.code] = json.rates['INR'] / json.rates[c.code];
-          }
-        });
-        if (Object.keys(inrRates).length > 0) setRates(inrRates);
+      if (!res.ok) throw new Error('Rate request failed');
+
+      const json = await res.json();
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: json.rates, timestamp: Date.now() }));
+      const inrRates: Record<string, number> = {};
+      CURRENCIES.forEach(c => {
+        if (json.rates[c.code] && json.rates['INR']) {
+          inrRates[c.code] = json.rates['INR'] / json.rates[c.code];
+        }
+      });
+      if (Object.keys(inrRates).length > 0) {
+        setRates(inrRates);
+        setRateSource('live');
       }
     } catch {
-      // fallback rates used
+      setRates(FALLBACK_RATES);
+      setRateSource('fallback');
     } finally {
       setLoading(false);
     }
@@ -84,12 +114,22 @@ const QuickCurrencyConvert: React.FC<QuickCurrencyConvertProps> = ({ onConvert }
     if (isOpen) fetchRates();
   }, [isOpen, fetchRates]);
 
-  const convertedINR = foreignAmount ? parseFloat(foreignAmount) * (rates[fromCurrency] || 0) : 0;
+  const numericForeignAmount = parseFloat(foreignAmount) || 0;
+  const rate = rates[fromCurrency] || 0;
+  const convertedINR = numericForeignAmount * rate;
   const selectedCurrency = CURRENCIES.find(c => c.code === fromCurrency);
 
   const handleUseAmount = () => {
-    if (convertedINR > 0) {
-      onConvert(Math.round(convertedINR * 100) / 100);
+    if (convertedINR > 0 && selectedCurrency) {
+      onConvert({
+        inrAmount: Math.round(convertedINR * 100) / 100,
+        foreignAmount: numericForeignAmount,
+        currency: fromCurrency,
+        symbol: selectedCurrency.symbol,
+        rate,
+        source: rateSource,
+        storeOriginal,
+      });
       setForeignAmount('');
       setIsOpen(false);
     }
@@ -147,15 +187,27 @@ const QuickCurrencyConvert: React.FC<QuickCurrencyConvertProps> = ({ onConvert }
                 </div>
               </div>
 
+              <div className="flex items-start gap-2 rounded-md bg-muted/40 p-2">
+                <Checkbox
+                  id="store-original-currency"
+                  checked={storeOriginal}
+                  onCheckedChange={(checked) => setStoreOriginal(checked === true)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="store-original-currency" className="text-xs leading-relaxed cursor-pointer">
+                  Store original currency value and rate as an Other Expenses note
+                </Label>
+              </div>
+
               {foreignAmount && convertedINR > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between p-2 rounded-md bg-primary/10"
+                  className="flex flex-col gap-2 rounded-md bg-primary/10 p-2 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">
-                      {selectedCurrency?.flag} {selectedCurrency?.symbol}{parseFloat(foreignAmount).toLocaleString()}
+                      {selectedCurrency?.flag} {selectedCurrency?.symbol}{numericForeignAmount.toLocaleString()}
                     </span>
                     <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="font-semibold text-primary">
@@ -177,9 +229,12 @@ const QuickCurrencyConvert: React.FC<QuickCurrencyConvertProps> = ({ onConvert }
                 <p className="text-xs text-muted-foreground">Fetching latest rates...</p>
               )}
 
-              <p className="text-[10px] text-muted-foreground">
-                Rate: 1 {fromCurrency} = ₹{rates[fromCurrency]?.toFixed(2) || '—'}
-              </p>
+              <div className="flex items-start gap-1.5 text-[10px] text-muted-foreground">
+                <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                <p>
+                  Rate: 1 {fromCurrency} = ₹{rate?.toFixed(2) || '—'} · {rateSource === 'fallback' ? 'Using offline fallback rate because live rates are unavailable.' : rateSource === 'cached' ? 'Using recently cached live rate.' : 'Using live exchange rate.'}
+                </p>
+              </div>
             </div>
           </motion.div>
         )}
