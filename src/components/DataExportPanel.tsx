@@ -30,7 +30,6 @@ const createSimplePdf = (lines: string[]) => {
 
   const objects: string[] = ['<< /Type /Catalog /Pages 2 0 R >>'];
   const pageObjectNumbers: number[] = [];
-  const contentObjectNumbers: number[] = [];
   objects.push('');
   objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
 
@@ -47,7 +46,6 @@ const createSimplePdf = (lines: string[]) => {
     objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
     const pageNumber = objects.length + 1;
     objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentNumber} 0 R >>`);
-    contentObjectNumbers.push(contentNumber);
     pageObjectNumbers.push(pageNumber);
   });
 
@@ -124,7 +122,7 @@ export const DataExportPanel: React.FC = () => {
     lines.push('Habit History');
     if (!habits.length) lines.push('No habits recorded yet.');
     habits.forEach((habit) => {
-      lines.push(`${habit.icon} ${habit.name} | ${habit.category} | ${habit.completedDates.length} completions | best streak ${habit.bestStreak}`);
+      lines.push(`${habit.name} | ${habit.category} | ${habit.completedDates.length} completions | best streak ${habit.bestStreak}`);
     });
     downloadFile(createSimplePdf(lines), 'habex-report.pdf', 'application/pdf');
     toast.success('PDF report downloaded');
