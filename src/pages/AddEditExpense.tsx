@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import QuickCurrencyConvert from '@/components/QuickCurrencyConvert';
+import QuickCurrencyConvert, { CurrencyConversionDetails } from '@/components/QuickCurrencyConvert';
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
@@ -149,6 +149,25 @@ const AddEditExpense: React.FC = () => {
       description: `${selectedMonth} ${formYear} expenses have been updated successfully.`,
     });
     navigate('/months');
+  };
+
+  const handleCurrencyConvert = (details: CurrencyConversionDetails) => {
+    navigator.clipboard?.writeText(String(details.inrAmount));
+
+    if (details.storeOriginal) {
+      const note = `Foreign currency: ${details.symbol}${details.foreignAmount} ${details.currency} @ ₹${details.rate.toFixed(2)} (${details.source})`;
+      setFormData(prev => ({
+        ...prev,
+        otherExpenses: [...prev.otherExpenses, { desc: note, amount: details.inrAmount }],
+      }));
+    }
+
+    toast({
+      title: 'Converted!',
+      description: details.storeOriginal
+        ? `₹${details.inrAmount} added to Other Expenses with original currency details.`
+        : `₹${details.inrAmount} copied to clipboard — paste into any field below.`,
+    });
   };
 
   const renderSimpleCategory = (
@@ -326,15 +345,7 @@ const AddEditExpense: React.FC = () => {
       </motion.div>
 
       {/* Quick Currency Converter */}
-      <QuickCurrencyConvert
-        onConvert={(inrAmount) => {
-          toast({
-            title: 'Converted!',
-            description: `₹${inrAmount} copied to clipboard — paste into any field below.`,
-          });
-          navigator.clipboard?.writeText(String(inrAmount));
-        }}
-      />
+      <QuickCurrencyConvert onConvert={handleCurrencyConvert} />
 
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

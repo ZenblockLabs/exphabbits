@@ -1,10 +1,16 @@
-import React from 'react';
-import { Download, FileText, Table } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { format } from 'date-fns';
+import { CalendarIcon, Download, FileText, Table } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import { useHabits } from '@/contexts/HabitContext';
-import { CATEGORIES, calculateCategoryTotal, calculateMonthTotal, type ExpenseItem } from '@/data/expenseData';
+import { CATEGORIES, MONTHS, calculateCategoryTotal, calculateMonthTotal, type ExpenseItem } from '@/data/expenseData';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
@@ -67,16 +73,47 @@ const createSimplePdf = (lines: string[]) => {
   return new Uint8Array([...pdf].map((char) => char.charCodeAt(0)));
 };
 
+const monthDate = (year: number, month: string) => new Date(year, MONTHS.indexOf(month as typeof MONTHS[number]), 1);
+
+const DateButton = ({ date, label }: { date?: Date; label: string }) => (
+  <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}>
+    <CalendarIcon className="mr-2 h-4 w-4" />
+    {date ? format(date, 'PPP') : label}
+  </Button>
+);
+
 export const DataExportPanel: React.FC = () => {
   const { expenses, availableYears } = useExpenses();
   const { habits } = useHabits();
+  const [filterMonth, setFilterMonth] = useState('all');
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+
+  const filteredYears = useMemo(() => {
+    return availableYears.map((year) => {
+      const yearData = expenses[year];
+      if (!yearData) return [year, []] as const;
+      const months = Object.entries(yearData).filter(([month]) => {
+        if (filterMonth !== 'all' && month !== filterMonth) return false;
+        const currentMonthDate = monthDate(year, month);
+        if (startDate && currentMonthDate < new Date(startDate.getFullYear(), startDate.getMonth(), 1)) return false;
+        if (endDate && currentMonthDate > new Date(endDate.getFullYear(), endDate.getMonth(), 1)) return false;
+        return true;
+      });
+      return [year, months] as const;
+    }).filter(([, months]) => months.length > 0);
+  }, [availableYears, endDate, expenses, filterMonth, startDate]);
+
+  const filterLabel = [
+    filterMonth !== 'all' ? filterMonth : 'All months',
+    startDate ? `from ${format(startDate, 'MMM yyyy')}` : '',
+    endDate ? `to ${format(endDate, 'MMM yyyy')}` : '',
+  ].filter(Boolean).join(' ');
 
   const exportExpensesCsv = () => {
     const rows = [['Year', 'Month', 'Category', 'Description', 'Amount INR']];
-    availableYears.forEach((year) => {
-      const yearData = expenses[year];
-      if (!yearData) return;
-      Object.entries(yearData).forEach(([month, monthData]) => {
+    filteredYears.forEach(([year, months]) => {
+      months.forEach(([month, monthData]) => {
         Object.entries(CATEGORIES).forEach(([key, category]) => {
           const values = monthData[key as keyof typeof monthData];
           if (!values.length) return;
@@ -107,14 +144,12 @@ export const DataExportPanel: React.FC = () => {
   };
 
   const exportPdf = () => {
-    const lines = ['Habex Expense & Habit Report', `Generated: ${new Date().toLocaleString()}`, ''];
-    availableYears.forEach((year) => {
-      const yearData = expenses[year];
-      if (!yearData) return;
-      const total = Object.values(yearData).reduce((sum, month) => sum + calculateMonthTotal(month), 0);
+    const lines = ['Habex Expense & Habit Report', `Generated: ${new Date().toLocaleString()}`, `Expense filter: ${filterLabel}`, ''];
+    filteredYears.forEach(([year, months]) => {
+      const total = months.reduce((sum, [, month]) => sum + calculateMonthTotal(month), 0);
       lines.push(`${year} expense total: INR ${total.toLocaleString()}`);
       Object.entries(CATEGORIES).forEach(([key, category]) => {
-        const categoryTotal = Object.values(yearData).reduce((sum, month) => sum + calculateCategoryTotal(month[key as keyof typeof month]), 0);
+        const categoryTotal = months.reduce((sum, [, month]) => sum + calculateCategoryTotal(month[key as keyof typeof month]), 0);
         if (categoryTotal > 0) lines.push(`- ${category.label}: INR ${categoryTotal.toLocaleString()}`);
       });
       lines.push('');
@@ -137,19 +172,52 @@ export const DataExportPanel: React.FC = () => {
         </CardTitle>
         <CardDescription>Download expense reports and habit history for your records</CardDescription>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Button variant="outline" onClick={exportExpensesCsv} className="justify-start gap-2">
-          <Table className="h-4 w-4" />
-          Expenses CSV
-        </Button>
-        <Button variant="outline" onClick={exportHabitsCsv} className="justify-start gap-2">
-          <Table className="h-4 w-4" />
-          Habits CSV
-        </Button>
-        <Button onClick={exportPdf} className="justify-start gap-2">
-          <FileText className="h-4 w-4" />
-          PDF Report
-        </Button>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Expense month</Label>
+            <Select value={filterMonth} onValueChange={setFilterMonth}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All months</SelectItem>
+                {MONTHS.map((month) => <SelectItem key={month} value={month}>{month}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>From</Label>
+            <Popover>
+              <PopoverTrigger asChild><DateButton date={startDate} label="Start month" /></PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="space-y-2">
+            <Label>To</Label>
+            <Popover>
+              <PopoverTrigger asChild><DateButton date={endDate} label="End month" /></PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Button variant="outline" onClick={exportExpensesCsv} className="justify-start gap-2">
+            <Table className="h-4 w-4" />
+            Expenses CSV
+          </Button>
+          <Button variant="outline" onClick={exportHabitsCsv} className="justify-start gap-2">
+            <Table className="h-4 w-4" />
+            Habits CSV
+          </Button>
+          <Button onClick={exportPdf} className="justify-start gap-2">
+            <FileText className="h-4 w-4" />
+            PDF Report
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
