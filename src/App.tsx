@@ -28,6 +28,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import CombinedDashboard from "./pages/CombinedDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import MindPuzzleGame from "./pages/MindPuzzleGame";
 
 const queryClient = new QueryClient();
 
@@ -113,6 +114,11 @@ function App() {
                     <Route path="/investments/:groupId" element={
                       <ProtectedRoute>
                         <Layout><InvestmentGroupDashboard /></Layout>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/games" element={
+                      <ProtectedRoute>
+                        <Layout><MindPuzzleGame /></Layout>
                       </ProtectedRoute>
                     } />
                     
