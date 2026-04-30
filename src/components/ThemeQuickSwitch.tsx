@@ -12,6 +12,12 @@ export const ThemeQuickSwitch: React.FC = () => {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
+  const handleThemeChange = (checked: boolean) => {
+    const nextTheme = checked ? 'dark' : 'light';
+    localStorage.setItem('habex-theme', nextTheme);
+    setTheme(nextTheme);
+  };
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -20,7 +26,7 @@ export const ThemeQuickSwitch: React.FC = () => {
           <Switch
             aria-label="Toggle dark mode"
             checked={isDark}
-            onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+            onCheckedChange={handleThemeChange}
             className="scale-90"
           />
           <Moon className="h-4 w-4 text-muted-foreground" />
