@@ -442,6 +442,47 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             })}
           </nav>
 
+          {/* Quick-launch: Mind Puzzle */}
+          {!collapsed && (
+            <div className="px-3 pb-2">
+              <NavLink
+                to="/games/mind-puzzle"
+                onClick={closeSidebar}
+                className="group block rounded-lg border border-sidebar-border bg-gradient-to-br from-primary/15 via-sidebar-accent/40 to-transparent p-3 transition-all hover:border-primary/60 hover:shadow-md"
+              >
+                <div className="flex items-center gap-2 text-xs font-medium text-sidebar-foreground/70">
+                  <Gamepad2 className="h-3.5 w-3.5" />
+                  Quick play
+                </div>
+                <div className="mt-1 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-sidebar-foreground">Mind Puzzle</div>
+                    <div className="text-[11px] text-sidebar-foreground/60">1-click memory drill</div>
+                  </div>
+                  <div className="rounded-full bg-primary p-1.5 text-primary-foreground shadow transition-transform group-hover:scale-110">
+                    <Play className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+              </NavLink>
+            </div>
+          )}
+          {collapsed && (
+            <div className="px-2 pb-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <NavLink
+                    to="/games/mind-puzzle"
+                    onClick={closeSidebar}
+                    className="flex items-center justify-center w-full p-3 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    <Play className="w-5 h-5" />
+                  </NavLink>
+                </TooltipTrigger>
+                <TooltipContent side="right">Quick play: Mind Puzzle</TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+
           {/* Admin & Settings Links */}
           <div className="px-2 py-2 space-y-1">
             {/* Admin Link - only visible to admins */}
