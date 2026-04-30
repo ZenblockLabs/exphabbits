@@ -70,16 +70,15 @@ export const readBestScore = (game: GameMeta): number | null => {
 
 export const writeBestScore = (game: GameMeta, score: number) => {
   const current = readBestScore(game);
-  if (current === null) {
+  let isBetter = false;
+  if (current === null) isBetter = true;
+  else isBetter = game.higherIsBetter === false ? score < current : score > current;
+  if (isBetter) {
     localStorage.setItem(game.bestScoreKey, String(score));
-    return true;
   }
-  const better = game.higherIsBetter === false ? score < current : score > current;
-  if (better) {
-    localStorage.setItem(game.bestScoreKey, String(score));
-    return true;
-  }
-  return false;
+  // Always record into leaderboard regardless
+  recordLeaderboardScore(game, score);
+  return isBetter;
 };
 
 export interface GameProgress {
@@ -108,4 +107,104 @@ export const clearProgress = (game: GameMeta) => {
 export const formatScore = (game: GameMeta, score: number) => {
   if (game.id === 'reaction-time') return `${score} ms`;
   return String(score);
+};
+
+// ============== Leaderboard ==============
+
+export interface LeaderboardEntry {
+  score: number;
+  at: number;
+  mode?: 'normal' | 'daily';
+  difficulty?: string;
+}
+
+const leaderboardKey = (game: GameMeta) => `habex-leaderboard-${game.id}`;
+const MAX_LEADERBOARD = 10;
+
+export const readLeaderboard = (game: GameMeta): LeaderboardEntry[] => {
+  try {
+    const raw = localStorage.getItem(leaderboardKey(game));
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as LeaderboardEntry[];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+};
+
+export const recordLeaderboardScore = (
+  game: GameMeta,
+  score: number,
+  meta: { mode?: 'normal' | 'daily'; difficulty?: string } = {}
+) => {
+  const entries = readLeaderboard(game);
+  entries.push({ score, at: Date.now(), mode: meta.mode ?? 'normal', difficulty: meta.difficulty });
+  entries.sort((a, b) =>
+    game.higherIsBetter === false ? a.score - b.score : b.score - a.score
+  );
+  const trimmed = entries.slice(0, MAX_LEADERBOARD);
+  localStorage.setItem(leaderboardKey(game), JSON.stringify(trimmed));
+};
+
+export const clearLeaderboard = (game: GameMeta) => {
+  localStorage.removeItem(leaderboardKey(game));
+};
+
+// ============== Daily Challenge ==============
+
+export const todayKey = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+/** Mulberry32 deterministic PRNG. */
+export const seededRng = (seedStr: string) => {
+  let h = 2166136261;
+  for (let i = 0; i < seedStr.length; i++) {
+    h ^= seedStr.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  let a = h >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+export interface DailyResult {
+  date: string;
+  score: number;
+  at: number;
+}
+
+const dailyKey = (game: GameMeta) => `habex-daily-${game.id}`;
+
+export const readDailyResult = (game: GameMeta): DailyResult | null => {
+  try {
+    const raw = localStorage.getItem(dailyKey(game));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as DailyResult;
+    if (parsed.date !== todayKey()) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+export const writeDailyResult = (game: GameMeta, score: number) => {
+  const existing = readDailyResult(game);
+  if (existing) {
+    const better =
+      game.higherIsBetter === false ? score < existing.score : score > existing.score;
+    if (!better) return existing;
+  }
+  const result: DailyResult = { date: todayKey(), score, at: Date.now() };
+  localStorage.setItem(dailyKey(game), JSON.stringify(result));
+  return result;
 };
