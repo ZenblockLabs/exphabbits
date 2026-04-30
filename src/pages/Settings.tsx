@@ -26,7 +26,8 @@ import {
   Lock,
   KeyRound,
   Volume2,
-  VolumeX
+  VolumeX,
+  Brain
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -74,6 +75,14 @@ const navGroups = [
       { to: '/habits', icon: BarChart3, label: 'Dashboard' },
       { to: '/habits/add', icon: CheckSquare, label: 'Add Habit' },
       { to: '/habits/challenge', icon: Flame, label: '21 Days Challenge' },
+    ],
+  },
+  {
+    label: 'Shared Investments',
+    icon: Receipt,
+    items: [
+      { to: '/investments', icon: LayoutDashboard, label: 'Groups' },
+      { to: '/games', icon: Brain, label: 'Games' },
     ],
   },
   {
