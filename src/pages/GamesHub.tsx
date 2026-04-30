@@ -15,6 +15,7 @@ import {
   readProgress,
   clearProgress,
 } from '@/data/gamesRegistry';
+import GamesLeaderboard from '@/components/GamesLeaderboard';
 
 const GamesHub: React.FC = () => {
   const [filter, setFilter] = useState<'All' | GameCategory>('All');
@@ -38,13 +39,14 @@ const GamesHub: React.FC = () => {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter games by category">
         {(['All', ...GAME_CATEGORIES] as const).map(cat => (
           <Button
             key={cat}
             variant={filter === cat ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter(cat)}
+            aria-pressed={filter === cat}
           >
             {cat}
           </Button>
@@ -130,6 +132,8 @@ const GamesHub: React.FC = () => {
           No games in this category yet.
         </div>
       )}
+
+      <GamesLeaderboard />
     </div>
   );
 };
